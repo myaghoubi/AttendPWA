@@ -52,7 +52,7 @@ const cameraBox = () => `<div class="cam"><video id="vd" playsinline muted></vid
 function drawBoxes(cv, vw, vh, items) {               // items: [{box,label,ok}]
   cv.width = vw; cv.height = vh;
   const g = cv.getContext("2d"); g.clearRect(0, 0, vw, vh);
-  const lw = Math.max(2, vw / 220); g.lineWidth = lw; const fs = Math.max(14, vw / 26); g.font = `bold ${fs}px sans-serif`; g.textBaseline = "top";
+  const lw = Math.max(2, vw / 220); g.lineWidth = lw; const fs = Math.max(14, vw / 26); g.font = `bold ${fs}px IRANSans, sans-serif`; g.textBaseline = "top";
   for (const it of items) {
     const b = it.box, col = it.ok === false ? "#f59e0b" : "#22c55e";
     g.strokeStyle = col; g.strokeRect(b.x, b.y, b.width, b.height);
