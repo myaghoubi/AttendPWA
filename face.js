@@ -136,7 +136,8 @@ async function viewAttend(c) {
     <div class="chips"><div class="chip on" data-m="cam">دوربین زنده</div><div class="chip" data-m="photo">از عکس</div></div>
     <div id="mode"></div>
     <div class="row" style="align-items:center"><span class="muted">آستانه (کمتر = سخت‌گیرتر)</span><input type="range" id="thr" min="35" max="70" value="50" style="flex:1"><b id="tv">۰٫۵۰</b></div>
-    <div class="section" id="sum"></div><div id="res" style="display:flex;flex-direction:column;gap:8px"></div>`);
+    <div class="section" id="sum"></div>
+    <div class="row"><button class="btn" id="sv" style="flex:1">ثبت جلسه در سوابق</button></div><div id="res" style="display:flex;flex-direction:column;gap:8px"></div>`);
   let thr = .5; $("#thr").oninput = e => { thr = e.target.value / 100; $("#tv").textContent = fa(thr.toFixed(2)).replace(".", "٫"); };
   $("#thr").oninput({target: $("#thr")});
   const found = new Map();                                // نام ← کمترین فاصله
@@ -147,6 +148,11 @@ async function viewAttend(c) {
       (miss.length ? `<div class="muted">غایب/دیده‌نشده: ${esc(miss.join("، "))}</div>` : "");
   };
   summary();
+  $("#sv").onclick = async () => {
+    if (!c.people.length) return toast("اول افراد را تعریف کن");
+    if (!found.size && !await ask({title: "ثبت جلسه", text: "هیچ‌کس شناسایی نشده؛ همه غایب ثبت شوند؟", ok: "ثبت"})) return;
+    addSession(c, new Set(found.keys())); Face.stopCam(); toast("جلسه ثبت شد"); go(`#/c/${c.id}/records`);
+  };
   const modeEl = $("#mode");
   async function camMode() {
     Face.stopCam(); modeEl.innerHTML = cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button><button class="btn soft" id="clr" style="flex:1">پاک کردن فهرست</button></div><div class="muted" id="st"></div>`;

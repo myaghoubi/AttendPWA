@@ -1,8 +1,8 @@
 // Service worker: برنامه یک‌بار دانلود می‌شود و بعد آفلاین کار می‌کند.
 // با هر تغییر فایل‌ها، شمارهٔ VERSION را بالا ببرید تا کاربران نسخهٔ جدید را بگیرند.
-const VERSION = "v2.1";
+const VERSION = "v3";
 const CACHE = "attendance-" + VERSION;
-const FILES = ["./", "index.html", "style.css", "app.js", "face.js", "manifest.webmanifest",
+const FILES = ["./", "index.html", "style.css", "app.js", "face.js", "records.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
