@@ -201,3 +201,82 @@ async function viewAttend(c) {
   });
   camMode();
 }
+
+
+/* ---------- ثبت چهره در صفحهٔ «تعریف افراد»: شناخته‌شده‌ها نمونه می‌گیرند، ناشناس‌ها «بدون نام» می‌شوند ---------- */
+const SCAN = {thr: .5, addBelow: .42, dup: .15, max: 10};
+function scanPanel(c, host, mode, onChange) {
+  c.faces = c.faces || {}; c.unknown = c.unknown || [];
+  const stat = {known: new Set(), added: 0, fresh: 0};
+  host.innerHTML = (mode === "cam" ? cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button></div>`
+    : `<div class="row"><button class="btn" id="pk" style="flex:1">انتخاب یا گرفتن عکس</button></div><input type="file" id="fi" accept="image/*" hidden><div class="photo"><canvas id="pc"></canvas></div>`) +
+    `<div class="muted" id="st"></div>`;
+  const st = host.querySelector("#st");
+  const minDist = (d, list) => list.reduce((m, s) => Math.min(m, faceapi.euclideanDistance(d, new Float32Array(s.d))), 9);
+  // همهٔ هویت‌ها: افراد (با نام) و ناشناس‌ها
+  const identify = d => {
+    let best = null, bd = 9;
+    for (const n of c.people) for (const s of (c.faces[n] || [])) { const x = faceapi.euclideanDistance(d, new Float32Array(s.d)); if (x < bd) { bd = x; best = {kind: "p", n}; } }
+    for (const u of c.unknown) for (const s of u.s) { const x = faceapi.euclideanDistance(d, new Float32Array(s.d)); if (x < bd) { bd = x; best = {kind: "u", u}; } }
+    return {best, bd};
+  };
+  // یک چهره را پردازش می‌کند؛ برچسب برمی‌گرداند
+  const handle = (det, src) => {
+    const d = Array.from(det.descriptor), box = det.detection.box;
+    if (det.detection.score < .6 || box.width < 50) return {label: "…", ok: false};
+    const {best, bd} = identify(det.descriptor), sample = () => ({d, t: thumbOf(src, box)});
+    if (best && bd <= SCAN.thr) {
+      if (best.kind === "p") {
+        stat.known.add(best.n);
+        const l = c.faces[best.n] || (c.faces[best.n] = []);
+        if (bd <= SCAN.addBelow && l.length < SCAN.max && minDist(det.descriptor, l) > SCAN.dup) { l.push(sample()); stat.added++; save(); onChange(); }
+        return {label: best.n, ok: true};
+      }
+      const l = best.u.s;
+      if (l.length < SCAN.max && minDist(det.descriptor, l) > SCAN.dup) { l.push(sample()); save(); onChange(); }
+      return {label: "بدون نام " + fa(c.unknown.indexOf(best.u) + 1), ok: false};
+    }
+    if (best && bd <= SCAN.thr + .06) return {label: "؟", ok: false};     // مبهم: نه اضافه کن نه ناشناس تازه بساز
+    const u = {id: uid(), s: [sample()]}; c.unknown.push(u); stat.fresh++; save(); onChange();
+    return {label: "بدون نام " + fa(c.unknown.length), ok: false};
+  };
+  const report = extra => st.textContent = `${fa(stat.known.size)} نفر شناخته‌شده · ${fa(stat.added)} نمونهٔ تازه · ${fa(stat.fresh)} ناشناس جدید${extra ? " · " + extra : ""}`;
+  if (mode === "photo") {
+    host.querySelector("#pk").onclick = () => host.querySelector("#fi").click();
+    host.querySelector("#fi").onchange = async e => {
+      const f = e.target.files[0]; if (!f) return; e.target.value = "";
+      try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(t => st.textContent = t); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
+      st.textContent = "در حال تشخیص…"; const t0 = performance.now();
+      const img = await loadImg(f), r = await Face.detect(img, true);
+      const items = r.map(x => { const h = handle(x, img); return {box: x.detection.box, label: h.label, ok: h.ok}; });
+      const pc = host.querySelector("#pc"); pc.width = img.naturalWidth; pc.height = img.naturalHeight;
+      pc.getContext("2d").drawImage(img, 0, 0); const sc = document.createElement("canvas");
+      drawBoxes(sc, img.naturalWidth, img.naturalHeight, items); pc.getContext("2d").drawImage(sc, 0, 0);
+      report(`${fa(r.length)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`);
+    };
+    return;
+  }
+  const cm = host.querySelector("#cm"), vd = host.querySelector("#vd"), ov = host.querySelector("#ov");
+  let facing = "user";
+  (async () => {
+    try { cm.textContent = "در حال بارگذاری…"; await Face.load(t => cm.textContent = t); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود"; return; }
+    const err = needSecure(); if (err) { cm.textContent = err; return; }
+    const run = async () => {
+      try { await Face.startCam(vd, facing); } catch (e) { cm.textContent = "اجازهٔ دوربین داده نشد"; return; }
+      cm.textContent = ""; const token = ++Face.loop;
+      const tick = async () => {
+        if (token !== Face.loop) return;
+        const t0 = performance.now();
+        try {
+          const r = await Face.detect(vd, false); if (token !== Face.loop) return;
+          drawBoxes(ov, vd.videoWidth, vd.videoHeight, r.map(x => { const h = handle(x, vd); return {box: x.detection.box, label: h.label, ok: h.ok}; }));
+          report(`${fa(r.length)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`);
+        } catch (e) {}
+        setTimeout(tick, 200);
+      };
+      tick();
+    };
+    host.querySelector("#flip").onclick = () => { facing = facing === "user" ? "environment" : "user"; run(); };
+    run();
+  })();
+}

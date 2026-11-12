@@ -104,7 +104,7 @@ function route() {
 
 /* ---------- بازیابی حذف‌شده‌ها (یک ساعت) و منوی اصلی ---------- */
 const HOLD = 3600e3;
-const KIND = {course: "درس", person: "فرد", session: "جلسه"};
+const KIND = {course: "درس", person: "فرد", session: "جلسه", unknown: "ناشناس"};
 function trashPurge() { S.trash = (S.trash || []).filter(e => Date.now() - e.t < HOLD); }
 function trashAdd(kind, label, data) {
   trashPurge(); const e = {id: uid(), kind, label, data, t: Date.now()}; S.trash.push(e); save();
@@ -121,7 +121,8 @@ function trashRestore(id) {
       c.people.splice(Math.min(d.i, c.people.length), 0, d.n);
       if (d.fs) (c.faces = c.faces || {})[d.n] = d.fs;
       (c.sessions || []).forEach(s => { if (d.marks[s.id] !== undefined) s.marks[d.n] = d.marks[s.id]; });
-    } else (c.sessions = c.sessions || []).splice(Math.min(d.i, c.sessions.length), 0, d.s);
+    } else if (e.kind === "unknown") (c.unknown = c.unknown || []).splice(Math.min(d.i, c.unknown.length), 0, d.u);
+    else (c.sessions = c.sessions || []).splice(Math.min(d.i, c.sessions.length), 0, d.s);
   }
   S.trash = S.trash.filter(x => x !== e); save(); closeMenu(); toast("بازیابی شد"); route();
 }
@@ -205,8 +206,32 @@ function viewPeople(c) {
     : `<div class="empty">هنوز کسی اضافه نشده.</div>`;
   show(`<div class="row"><input type="text" id="nm" placeholder="نام و نام خانوادگی" autocomplete="off" enterkeyhint="done">
       <button class="btn" id="ad">افزودن</button></div>
+    <div class="chips"><div class="chip" data-sm="cam">دوربین زنده</div><div class="chip" data-sm="photo">از عکس</div></div>
+    <div id="scan"></div>
+    <div id="unk" style="display:flex;flex-direction:column;gap:10px"></div>
     <div class="muted" id="cnt"></div><div id="lst" style="display:flex;flex-direction:column;gap:10px"></div>`);
+  const drawUnk = () => {
+    const u = c.unknown || [];
+    $("#unk").innerHTML = u.length ? `<div class="section">ناشناس‌ها: نام بده تا به فهرست افراد اضافه شوند</div>` + u.map((x, k) => `
+      <div class="card" style="min-height:64px;cursor:default;--accent:var(--warn)">
+        <div class="avatar">${x.s[0] ? `<img src="${x.s[0].t}" alt="">` : "؟"}</div>
+        <div class="txt"><div class="t">بدون نام ${fa(k + 1)}</div><div class="s">${fa(x.s.length)} نمونهٔ چهره</div></div>
+        <div class="act"><button class="btn" data-u="${x.id}" data-a="name" style="padding:9px 14px">ثبت نام</button>
+        <button class="mini del" data-u="${x.id}" data-a="rm" aria-label="حذف">${icon("trash")}</button></div></div>`).join("") : "";
+    $("#unk").querySelectorAll("[data-u]").forEach(b => b.onclick = async () => {
+      const i = c.unknown.findIndex(x => x.id === b.dataset.u), x = c.unknown[i]; if (!x) return;
+      if (b.dataset.a === "rm") { c.unknown.splice(i, 1); trashAdd("unknown", "ناشناس", {cid: c.id, i, u: x}); return drawUnk(); }
+      const v = await ask({title: "نام فرد", text: "اگر این نام قبلاً در فهرست باشد، نمونه‌ها به همان فرد اضافه می‌شود.", input: "", ok: "ثبت"});
+      if (!v) return;
+      const j = c.unknown.findIndex(y => y.id === x.id); if (j < 0) return;
+      c.unknown.splice(j, 1); c.faces = c.faces || {};
+      if (!c.people.includes(v)) c.people.push(v);
+      c.faces[v] = [...(c.faces[v] || []), ...x.s].slice(0, 10);
+      save(); draw(); toast(`«${v}» ثبت شد`);
+    });
+  };
   const draw = () => {
+    drawUnk();
     $("#cnt").textContent = `${fa(c.people.length)} نفر`;
     $("#lst").innerHTML = list();
     $("#lst").querySelectorAll("[data-a]").forEach(b => b.onclick = async () => {
@@ -230,6 +255,12 @@ function viewPeople(c) {
     if (c.people.includes(v)) return toast("این نام قبلاً هست");
     c.people.push(v); save(); $("#nm").value = ""; draw(); $("#nm").focus();
   };
+  page.querySelectorAll("[data-sm]").forEach(ch => ch.onclick = () => {
+    const on = !ch.classList.contains("on");
+    page.querySelectorAll("[data-sm]").forEach(x => x.classList.remove("on"));
+    Face.stopCam(); $("#scan").innerHTML = "";
+    if (on) { ch.classList.add("on"); scanPanel(c, $("#scan"), ch.dataset.sm, draw); }
+  });
   $("#ad").onclick = add;
   $("#nm").onkeydown = e => { if (e.key === "Enter") add(); };
   draw();
