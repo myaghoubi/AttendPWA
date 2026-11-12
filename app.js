@@ -5,7 +5,7 @@ const bar = $("#bar"), page = $("#page"), dlg = $("#dlg");
 const ACCENTS = ["primary", "ok", "warn", "danger"];
 const IC = {
   back: '<path d="M9 6l6 6-6 6"/>', plus: '<path d="M12 5v14M5 12h14"/>', trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/>',
-  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', cam: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
 };
 const icon = n => `<svg viewBox="0 0 24 24">${IC[n]}</svg>`;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -87,10 +87,13 @@ function show(html) { page.innerHTML = html; page.classList.remove("page-in"); v
 const course = id => S.courses.find(c => c.id === id);
 
 function route() {
+  Face.stopCam();                                        // دوربین فقط در صفحهٔ خودش روشن است
   const p = location.hash.replace(/^#\/?/, "").split("/");
   if (p[0] === "c" && course(p[1])) {
     if (p[2] === "people") return viewPeople(course(p[1]));
-    if (p[2] === "records" || p[2] === "attend") return viewSoon(course(p[1]), p[2]);
+    if (p[2] === "face") return viewEnroll(course(p[1]), +p[3]);
+    if (p[2] === "attend") return viewAttend(course(p[1]));
+    if (p[2] === "records") return viewSoon(course(p[1]), p[2]);
     return viewCourse(course(p[1]));
   }
   if (p[0] === "settings") return viewSettings();
@@ -139,7 +142,7 @@ function viewCourse(c) {
   const card = (key, t, s, acc, on) => `<button class="card ${on ? "" : "off"}" data-go="${key}" style="--accent:var(--${acc})">
     <div class="stripe"></div><div class="txt"><div class="t">${t}${on ? "" : '<span class="soon">به‌زودی</span>'}</div><div class="s">${s}</div></div></button>`;
   show(card("people", "تعریف افراد", `${fa(c.people.length)} نفر`, "primary", true) +
-       card("attend", "حضور و غیاب", "ثبت حضور با دوربین", "ok", false) +
+       card("attend", "حضور و غیاب", "تشخیص چهره (آزمایشی)", "ok", true) +
        card("records", "سوابق حضور", "جدول جلسه‌ها", "warn", false));
   page.querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(`#/c/${c.id}/${b.dataset.go}`));
 }
@@ -153,9 +156,10 @@ function viewPeople(c) {
   setBar("تعریف افراد", {back: "#/c/" + c.id, sub: c.name, acc: "primary"});
   const list = () => c.people.length ? c.people.map((n, i) => `
     <div class="card" style="min-height:64px;cursor:default;--accent:var(--primary)">
-      <div class="avatar">${esc([...n][0] || "؟")}</div>
-      <div class="txt"><div class="t">${esc(n)}</div></div>
-      <div class="act"><button class="mini" data-a="ren" data-i="${i}">${icon("edit")}</button>
+      <div class="avatar">${(c.faces?.[n] || [])[0] ? `<img src="${c.faces[n][0].t}" alt="">` : esc([...n][0] || "؟")}</div>
+      <div class="txt"><div class="t">${esc(n)}</div><div class="s">${(c.faces?.[n] || []).length ? fa(c.faces[n].length) + " نمونهٔ چهره" : "بدون نمونهٔ چهره"}</div></div>
+      <div class="act"><button class="mini" data-a="cam" data-i="${i}" aria-label="نمونهٔ چهره">${icon("cam")}</button>
+      <button class="mini" data-a="ren" data-i="${i}">${icon("edit")}</button>
       <button class="mini del" data-a="del" data-i="${i}">${icon("trash")}</button></div></div>`).join("")
     : `<div class="empty">هنوز کسی اضافه نشده.</div>`;
   show(`<div class="row"><input type="text" id="nm" placeholder="نام و نام خانوادگی" autocomplete="off" enterkeyhint="done">
@@ -166,12 +170,13 @@ function viewPeople(c) {
     $("#lst").innerHTML = list();
     $("#lst").querySelectorAll("[data-a]").forEach(b => b.onclick = async () => {
       const i = +b.dataset.i, n = c.people[i];
+      if (b.dataset.a === "cam") return go(`#/c/${c.id}/face/${i}`);
       if (b.dataset.a === "ren") {
         const v = await ask({title: "نام", input: n, ok: "ذخیره"});
-        if (v && v !== n) { if (c.people.includes(v)) return toast("این نام قبلاً هست"); c.people[i] = v; save(); draw(); }
+        if (v && v !== n) { if (c.people.includes(v)) return toast("این نام قبلاً هست"); c.people[i] = v; if (c.faces?.[n]) { c.faces[v] = c.faces[n]; delete c.faces[n]; } save(); draw(); }
       } else {
-        c.people.splice(i, 1); save(); draw();
-        toast(`«${n}» حذف شد`, () => { c.people.splice(i, 0, n); save(); draw(); });
+        const fs = c.faces?.[n]; c.people.splice(i, 1); if (c.faces) delete c.faces[n]; save(); draw();
+        toast(`«${n}» حذف شد`, () => { c.people.splice(i, 0, n); if (fs) (c.faces = c.faces || {})[n] = fs; save(); draw(); });
       }
     });
   };
