@@ -5,7 +5,7 @@ const bar = $("#bar"), page = $("#page"), dlg = $("#dlg");
 const ACCENTS = ["primary", "ok", "warn", "danger"];
 const IC = {
   back: '<path d="M9 6l6 6-6 6"/>', plus: '<path d="M12 5v14M5 12h14"/>', trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/>',
-  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>', edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', cam: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
+  sync: '<path d="M20 7v5h-5M4 17v-5h5M5.5 9A7 7 0 0 1 18 7.5L20 12M18.5 15A7 7 0 0 1 6 16.5L4 12"/>', menu: '<path d="M4 7h16M4 12h16M4 17h16"/>', edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', cam: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
 };
 const icon = n => `<svg viewBox="0 0 24 24">${IC[n]}</svg>`;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -46,13 +46,6 @@ addEventListener("pagehide", save);
 addEventListener("visibilitychange", () => document.hidden && save());
 
 /* ---------- ظاهر ---------- */
-function applyTheme() {
-  const t = S.settings.theme;
-  const dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
-  document.documentElement.dataset.theme = dark ? "dark" : "light";
-}
-matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
-
 let toastT = null;
 function toast(msg, undo) {
   const t = $("#toast");
@@ -77,8 +70,8 @@ function ask({title, text, input, ok = "تأیید", danger = false}) {
 /* ---------- مسیریابی ---------- */
 const go = h => { location.hash = h; };
 function setBar(title, {back, sub, right = "", acc} = {}) {
-  bar.style.background = acc ? `var(--${acc})` : "";
-  if (acc && document.documentElement.dataset.theme === "dark") bar.style.background = "";
+  if (acc) { bar.dataset.acc = acc; bar.style.setProperty("--acc", `var(--${acc})`); bar.style.setProperty("--on-acc", `var(--on-${acc})`); }
+  else { delete bar.dataset.acc; }
   bar.innerHTML = (back ? `<button class="ib" id="bk" aria-label="بازگشت">${icon("back")}</button>` : "") +
     `<h1>${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ""}</h1>${right}<button class="ib" id="mn" aria-label="منو">${icon("menu")}</button>`;
   if (back) $("#bk").onclick = () => go(back);
@@ -99,16 +92,23 @@ function route() {
     return viewCourse(course(p[1]));
   }
   if (p[0] === "settings") return viewSettings();
+  if (p[0] === "vision") return viewVision();
+  if (p[0] === "about") return viewAbout();
+  if (p[0] === "moodle") return p[1] === "sync" ? viewMdSync(p[2], p[3]) : viewMoodle();
   return viewCourses();
 }
 
 /* ---------- بازیابی حذف‌شده‌ها (یک ساعت) و منوی اصلی ---------- */
 const HOLD = 3600e3;
 const KIND = {course: "درس", person: "فرد", session: "جلسه", unknown: "ناشناس"};
-function trashPurge() { S.trash = (S.trash || []).filter(e => Date.now() - e.t < HOLD); }
+function trashPurge() {
+  const k = S.settings?.undoK ?? 1;
+  S.trash = (S.trash || []).filter(e => Date.now() - e.t < HOLD);
+  if (S.trash.length > k) S.trash = k ? S.trash.slice(-k) : [];
+}
 function trashAdd(kind, label, data) {
-  trashPurge(); const e = {id: uid(), kind, label, data, t: Date.now()}; S.trash.push(e); save();
-  toast(`«${label}» حذف شد`, () => trashRestore(e.id));
+  const e = {id: uid(), kind, label, data, t: Date.now()}; (S.trash = S.trash || []).push(e); trashPurge(); save();
+  if (S.trash.includes(e)) toast(`«${label}» حذف شد`, () => trashRestore(e.id)); else toast(`«${label}» حذف شد`);
 }
 function trashRestore(id) {
   trashPurge(); const e = S.trash.find(x => x.id === id); if (!e) return toast("زمان بازیابی گذشته است");
@@ -128,14 +128,19 @@ function trashRestore(id) {
 }
 function openMenu() {
   trashPurge();
-  const dr = $("#drawer"), left = S.trash.slice().reverse();
+  const dr = $("#drawer"), left = S.trash.slice().reverse(), md = mdc();
   const ring = e => { const rem = Math.max(0, HOLD - (Date.now() - e.t)), m = Math.ceil(rem / 60000);
     return `<span class="ring" style="--p:${Math.round(rem / HOLD * 360)}deg"><i>${fa(m)}</i></span>`; };
-  const item = (h, t, extra = "", s = "") => `<button class="mi" data-h="${h}"><span class="mt">${t}${s ? `<small>${s}</small>` : ""}</span>${extra}</button>`;
+  const item = (h, t, s = "") => `<button class="mi" data-h="${h}"><span class="mt">${t}${s ? `<small>${s}</small>` : ""}</span></button>`;
+  const u = md.on && md.user;
+  const who = u ? `<div class="mu"><b>${esc(u.fullname || "")}</b><small>${esc(u.username || "")}</small><small>${esc(u.sitename || "")}</small><small dir="ltr">${esc(u.siteurl || md.url || "")}</small></div>`
+    : `<div class="mu off"><small>مودل آفلاین</small></div>`;
   dr.innerHTML = `<div class="scrim"></div><nav>
-    <div class="nh">حضور و غیاب</div>
-    ${item("#/", "دروس")}${item("#/settings", "تنظیمات")}${item("#/settings", "پشتیبان‌گیری و بازیابی از فایل")}
+    <div class="nh">حضور و غیاب</div>${who}<div class="hr"></div>
+    ${item("#/settings", "تنظیمات برنامه")}${item("#/vision", "شناسایی چهره")}${item("#/moodle", "تنظیمات اتصال به مودل")}
+    ${item("#/", "فهرست دروس من")}${item("#/settings", "پشتیبان‌گیری و بازیابی از فایل")}
     ${left.length ? `<div class="section">بازیابی</div>` + left.map(e => `<button class="mi" data-r="${e.id}"><span class="mt">برگردان ${KIND[e.kind]}<small>${esc(e.label)}</small></span>${ring(e)}</button>`).join("") : ""}
+    <div class="hr"></div>${item("#/about", "درباره ما")}
     </nav>`;
   dr.classList.add("open");
   dr.querySelector(".scrim").onclick = closeMenu;
@@ -146,7 +151,8 @@ function closeMenu() { $("#drawer").classList.remove("open"); }
 
 /* ---------- دروس ---------- */
 function viewCourses() {
-  setBar("دروس", {right: `<button class="ib" id="add" aria-label="درس جدید">${icon("plus")}</button>`});
+  setBar("دروس", {right: (mdReady() ? `<button class="ib" id="msy" aria-label="همگام‌سازی با مودل">${icon("sync")}</button>` : "") + `<button class="ib" id="add" aria-label="درس جدید">${icon("plus")}</button>`});
+  if ($("#msy")) $("#msy").onclick = () => go("#/moodle/sync/courses");
   $("#add").onclick = newCourse;
   show(S.courses.length ? S.courses.map(c => `
     <div class="card" data-id="${c.id}" style="--accent:var(--${c.acc})">
@@ -179,14 +185,33 @@ async function delCourse(c) {
 }
 
 /* ---------- صفحهٔ درس ---------- */
+function sessionChart(c, last = 12) {
+  const ss = [...(c.sessions || [])].sort((x, y) => x.t - y.t).slice(-last);
+  if (!ss.length || !c.people.length) return "";
+  const cnt = ss.map(s => { const o = {P: 0, L: 0, A: 0}; c.people.forEach(n => { const m = s.marks[n] || "A"; o[m === "E" ? "A" : m]++; }); return o; });
+  const mx = Math.max(1, ...cnt.map(o => Math.max(o.P, o.L, o.A)));
+  const bar = (n, k) => `<i class="b b${k}" style="height:${Math.round(n / mx * 100)}%"><em>${n ? fa(n) : ""}</em></i>`;
+  return `<div class="chart full"><div class="ct">حضور در جلسات${(c.sessions || []).length > last ? ` · آخرین ${fa(last)} جلسه` : ""}</div>
+    <div class="cl"><span><i class="sq bP"></i>حاضر</span><span><i class="sq bL"></i>تأخیر</span><span><i class="sq bA"></i>غایب</span><span>${fa(c.people.length)} دانشجو</span><span>${fa((c.sessions || []).length)} جلسه</span></div>
+    <div class="cb">${cnt.map(o => `<div class="cg">${bar(o.P, "P")}${bar(o.L, "L")}${bar(o.A, "A")}</div>`).join("")}</div></div>`;
+}
 function viewCourse(c) {
   setBar(c.name, {back: "#/", acc: c.acc});
-  const card = (key, t, s, acc, on) => `<button class="card ${on ? "" : "off"}" data-go="${key}" style="--accent:var(--${acc})">
-    <div class="stripe"></div><div class="txt"><div class="t">${t}${on ? "" : '<span class="soon">به‌زودی</span>'}</div><div class="s">${s}</div></div></button>`;
-  show(card("people", "تعریف افراد", `${fa(c.people.length)} نفر`, "primary", true) +
-       card("attend", "حضور و غیاب", "تشخیص چهره (آزمایشی)", "ok", true) +
-       card("records", "سوابق حضور", `${fa((c.sessions || []).length)} جلسه`, "warn", true));
-  page.querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(`#/c/${c.id}/${b.dataset.go}`));
+  const card = (key, t, s, acc) => `<button class="card" data-go="${key}" style="--accent:var(--${acc})">
+    <div class="stripe"></div><div class="txt"><div class="t">${t}</div><div class="s">${s}</div></div></button>`;
+  show(sessionChart(c) + card("people", "تعریف افراد", `${fa(c.people.length)} نفر`, "primary") +
+       card("attend", "حضور و غیاب", "شناسایی حاضرین از روی دوربین یا عکس", "ok") +
+       card("records", "سوابق حضور", `${fa((c.sessions || []).length)} جلسه`, "warn") +
+       (mdReady() ? card("msync", "همگام‌سازی با مودل", c.md?.id ? "این درس به مودل وصل است" : "هنوز وصل نیست", "primary") : ""));
+  page.querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go === "msync" ? `#/moodle/sync/${c.id}` : `#/c/${c.id}/${b.dataset.go}`));
+}
+function viewAbout() {
+  setBar("درباره ما", {back: "#/"});
+  show(`<div class="about"><img src="icons/icon-192.png" alt="" width="96" height="96">
+    <h2>سامانه حضور و غیاب تصویری</h2>
+    <p class="muted">ایده‌پردازی و طراحی در پژوهشکدهٔ هوش مصنوعی دانشگاه گلستان</p><p class="muted">آبان ۱۴۰۵</p>
+    <div class="vcard" style="text-align:center"><b>درباره توسعه‌دهنده</b><div>مهدی یعقوبی</div><div class="muted">گروه مهندسی کامپیوتر</div><div class="muted">دانشگاه گلستان</div>
+      <div class="muted" dir="ltr">mehdi.yaghoubi@gmail.com</div><div class="muted">همکار توسعه: Claude (Anthropic) · دستیار هوش مصنوعی</div></div></div>`);
 }
 function viewSoon(c, k) {
   setBar(k === "attend" ? "حضور و غیاب" : "سوابق حضور", {back: "#/c/" + c.id, sub: c.name, acc: c.acc});
@@ -239,13 +264,9 @@ function viewPeople(c) {
       if (b.dataset.a === "cam") return go(`#/c/${c.id}/face/${i}`);
       if (b.dataset.a === "ren") {
         const v = await ask({title: "نام", input: n, ok: "ذخیره"});
-        if (v && v !== n) { if (c.people.includes(v)) return toast("این نام قبلاً هست"); c.people[i] = v; if (c.faces?.[n]) { c.faces[v] = c.faces[n]; delete c.faces[n]; }
-          (c.sessions || []).forEach(s => { if (n in s.marks) { s.marks[v] = s.marks[n]; delete s.marks[n]; } }); save(); draw(); }
+        if (v && v !== n) { if (c.people.includes(v)) return toast("این نام قبلاً هست"); renamePerson(c, n, v); draw(); }
       } else {
-        const fs = c.faces?.[n], marks = {};
-        (c.sessions || []).forEach(s => { if (n in s.marks) { marks[s.id] = s.marks[n]; delete s.marks[n]; } });
-        c.people.splice(i, 1); if (c.faces) delete c.faces[n];
-        trashAdd("person", n, {cid: c.id, i, n, fs, marks}); draw();
+        deletePerson(c, n); draw();
       }
     });
   };
@@ -266,52 +287,12 @@ function viewPeople(c) {
   draw();
 }
 
-/* ---------- تنظیمات و پشتیبان ---------- */
-let deferredInstall = null;
-addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInstall = e; if (location.hash.includes("settings")) viewSettings(); });
-function viewSettings() {
-  setBar("تنظیمات", {back: "#/"});
-  const th = [["system", "خودکار"], ["light", "روشن"], ["dark", "تاریک"]];
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone;
-  show(`<div class="section">ظاهر</div>
-    <div class="chips">${th.map(([k, t]) => `<div class="chip ${S.settings.theme === k ? "on" : ""}" data-th="${k}">${t}</div>`).join("")}</div>
-    <div class="section">هشدار غیبت: ردیف بعد از این تعداد غیبت قرمز می‌شود</div>
-    <div class="chips">${[3, 4, 5, 6, 8, 10].map(n => `<div class="chip ${(S.settings.limit ?? 6) === n ? "on" : ""}" data-lim="${n}">${fa(n)}</div>`).join("")}</div>
-    <div class="section">پشتیبان‌گیری</div>
-    <div class="muted">داده‌ها فقط روی همین دستگاه و در مرورگر ذخیره می‌شوند. برای اطمینان گاهی پشتیبان بگیر.</div>
-    <div class="row"><button class="btn" id="ex">دریافت پشتیبان</button><button class="btn soft" id="im">بازیابی از فایل</button></div>
-    <input type="file" id="fi" accept="application/json,.json" hidden>
-    <div class="section">نصب برنامه</div>
-    ${deferredInstall ? `<button class="btn" id="inst">نصب روی این دستگاه</button>` :
-      ios ? `<div class="muted">در آیفون: دکمهٔ اشتراک‌گذاری Safari ← «Add to Home Screen».</div>` :
-      `<div class="muted">از منوی مرورگر گزینهٔ «نصب برنامه» یا «Add to Home screen» را بزن.</div>`}`);
-  page.querySelectorAll("[data-th]").forEach(c => c.onclick = () => { S.settings.theme = c.dataset.th; save(); applyTheme(); viewSettings(); });
-  page.querySelectorAll("[data-lim]").forEach(c => c.onclick = () => { S.settings.limit = +c.dataset.lim; save(); viewSettings(); });
-  $("#ex").onclick = () => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 1)], {type: "application/json"}));
-    a.download = "attendance-backup-" + new Date().toISOString().slice(0, 10) + ".json";
-    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  };
-  $("#im").onclick = () => $("#fi").click();
-  $("#fi").onchange = async e => {
-    const f = e.target.files[0]; if (!f) return;
-    try {
-      const d = JSON.parse(await f.text());
-      if (!Array.isArray(d.courses)) throw 0;
-      if (!await ask({title: "بازیابی", text: "داده‌های فعلی با این پشتیبان جایگزین می‌شوند.", ok: "جایگزین کن", danger: true})) return;
-      S = {v: 1, settings: {theme: "system"}, ...d}; save(); applyTheme(); toast("بازیابی شد"); go("#/");
-    } catch (_) { toast("فایل پشتیبان معتبر نیست"); }
-  };
-  if (deferredInstall) $("#inst").onclick = async () => { deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; viewSettings(); };
-}
-
 /* ---------- شروع ---------- */
 (async function init() {
   await Store.open();
   const d = await Store.get("state");
-  if (d && Array.isArray(d.courses)) S = {v: 1, settings: {theme: "system"}, ...d};
-  applyTheme();
+  if (d && Array.isArray(d.courses)) S = {v: 1, ...d};
+  normSettings(); applyTheme();
   navigator.storage?.persist?.();                       // جلوگیری از پاک شدن خودکار داده‌ها
   addEventListener("hashchange", route);
   route();

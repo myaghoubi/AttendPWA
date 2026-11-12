@@ -12,10 +12,10 @@ const Face = {
     })().catch(e => { this.ready = null; throw e; });
     return this.ready;
   },
-  tiny: () => new faceapi.TinyFaceDetectorOptions({inputSize: 416, scoreThreshold: .5}),
-  ssd: () => new faceapi.SsdMobilenetv1Options({minConfidence: .5}),
+  tiny: () => new faceapi.TinyFaceDetectorOptions({inputSize: VP("live_size"), scoreThreshold: VP("det_score")}),
+  ssd: () => new faceapi.SsdMobilenetv1Options({minConfidence: VP("det_score")}),
   async detect(src, accurate) {
-    return faceapi.detectAllFaces(src, accurate ? this.ssd() : this.tiny()).withFaceLandmarks().withFaceDescriptors();
+    return faceapi.detectAllFaces(src, accurate && VP("photo_accurate") ? this.ssd() : this.tiny()).withFaceLandmarks().withFaceDescriptors();
   },
   gallery(c) {
     const g = [];
@@ -39,15 +39,23 @@ const Face = {
   },
 };
 const thumbOf = (src, box) => {                      // مربع کوچک اطراف چهره برای نمایش
-  const m = box.width * .25, x = Math.max(0, box.x - m), y = Math.max(0, box.y - m), w = box.width + 2 * m, h = box.height + 2 * m;
+  const m = box.width * (VP("crop_k") - 1) / 2, x = Math.max(0, box.x - m), y = Math.max(0, box.y - m), w = box.width + 2 * m, h = box.height + 2 * m;
   const sw = src.videoWidth || src.naturalWidth || src.width, sh = src.videoHeight || src.naturalHeight || src.height;
   const side = Math.min(Math.max(w, h), sw, sh);
   const cx = Math.min(Math.max(x + w / 2 - side / 2, 0), sw - side), cy = Math.min(Math.max(y + h / 2 - side / 2, 0), sh - side);
-  const c = document.createElement("canvas"); c.width = c.height = 96;
-  c.getContext("2d").drawImage(src, cx, cy, side, side, 0, 0, 96, 96);
-  return c.toDataURL("image/jpeg", .72);
+  const z = VP("thumb_size"), c = document.createElement("canvas"); c.width = c.height = z;
+  c.getContext("2d").drawImage(src, cx, cy, side, side, 0, 0, z, z);
+  return c.toDataURL("image/jpeg", VP("jpeg"));
 };
-const loadImg = file => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file); });
+const loadImg = file => new Promise((ok, no) => {            // عکس را به اندازهٔ مجاز کوچک می‌کند (یک canvas برمی‌گرداند)
+  const i = new Image();
+  i.onload = () => {
+    const k = Math.min(1, VP("photo_side") / Math.max(i.naturalWidth, i.naturalHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(i.naturalWidth * k); c.height = Math.round(i.naturalHeight * k);
+    c.getContext("2d").drawImage(i, 0, 0, c.width, c.height); URL.revokeObjectURL(i.src); ok(c);
+  };
+  i.onerror = no; i.src = URL.createObjectURL(file);
+});
 const cameraBox = () => `<div class="cam"><video id="vd" playsinline muted></video><canvas id="ov"></canvas><div class="cam-msg" id="cm"></div></div>`;
 function drawBoxes(cv, vw, vh, items) {               // items: [{box,label,ok}]
   cv.width = vw; cv.height = vh;
@@ -71,7 +79,7 @@ function needSecure() {
 async function viewEnroll(c, idx) {
   const name = c.people[idx];
   if (name === undefined) return go("#/c/" + c.id + "/people");
-  c.faces = c.faces || {}; const MAX = 8;
+  c.faces = c.faces || {}; const MAX = VP("max_faces");
   setBar("نمونهٔ چهره", {back: `#/c/${c.id}/people`, sub: name, acc: "primary"});
   show(`${cameraBox()}
     <div class="row"><button class="btn" id="shot" disabled style="flex:1">ثبت نمونه از دوربین</button>
@@ -110,7 +118,7 @@ async function viewEnroll(c, idx) {
         $("#shot").disabled = !last;
         st.textContent = r.length === 0 ? "چهره‌ای دیده نمی‌شود" : r.length > 1 ? "فقط یک نفر مقابل دوربین باشد" : "آماده؛ ثبت کن  ·  " + fa(Math.round(performance.now() - t0)) + " میلی‌ثانیه";
       } catch (e) {}
-      setTimeout(tick, 120);
+      setTimeout(tick, VP("live_ms"));
     };
     tick();
   };
@@ -135,10 +143,10 @@ async function viewAttend(c) {
   show(`<div class="muted">${fa(enrolled)} نفر از ${fa(c.people.length)} نفر نمونهٔ چهره دارند.${enrolled ? "" : " اول از «تعریف افراد» نمونه ثبت کن."}</div>
     <div class="chips"><div class="chip on" data-m="cam">دوربین زنده</div><div class="chip" data-m="photo">از عکس</div></div>
     <div id="mode"></div>
-    <div class="row" style="align-items:center"><span class="muted">آستانه (کمتر = سخت‌گیرتر)</span><input type="range" id="thr" min="35" max="70" value="50" style="flex:1"><b id="tv">۰٫۵۰</b></div>
+    <div class="row" style="align-items:center"><span class="muted">آستانه (کمتر = سخت‌گیرتر)</span><input type="range" id="thr" min="35" max="70" value="${Math.round(VP("match_thr") * 100)}" style="flex:1"><b id="tv">۰٫۵۰</b></div>
     <div class="section" id="sum"></div>
     <div class="row"><button class="btn" id="sv" style="flex:1">ثبت جلسه در سوابق</button></div><div id="res" style="display:flex;flex-direction:column;gap:8px"></div>`);
-  let thr = .5; $("#thr").oninput = e => { thr = e.target.value / 100; $("#tv").textContent = fa(thr.toFixed(2)).replace(".", "٫"); };
+  let thr = VP("match_thr"); $("#thr").oninput = e => { thr = e.target.value / 100; $("#tv").textContent = fa(thr.toFixed(2)).replace(".", "٫"); };
   $("#thr").oninput({target: $("#thr")});
   const found = new Map();                                // نام ← کمترین فاصله
   const summary = () => {
@@ -151,7 +159,7 @@ async function viewAttend(c) {
   $("#sv").onclick = async () => {
     if (!c.people.length) return toast("اول افراد را تعریف کن");
     if (!found.size && !await ask({title: "ثبت جلسه", text: "هیچ‌کس شناسایی نشده؛ همه غایب ثبت شوند؟", ok: "ثبت"})) return;
-    addSession(c, new Set(found.keys())); Face.stopCam(); toast("جلسه ثبت شد"); go(`#/c/${c.id}/records`);
+    const ns = addSession(c, new Set(found.keys())); Face.stopCam(); toast("جلسه ثبت شد"); mdAutoSession(c, ns); go(`#/c/${c.id}/records`);
   };
   const modeEl = $("#mode");
   async function camMode() {
@@ -171,7 +179,7 @@ async function viewAttend(c) {
           drawBoxes(ov, vd.videoWidth, vd.videoHeight, items); summary();
           st.textContent = `${fa(r.length)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`;
         } catch (e) {}
-        setTimeout(tick, 150);
+        setTimeout(tick, VP("live_ms"));
       };
       tick();
     };
@@ -189,9 +197,9 @@ async function viewAttend(c) {
       const img = await loadImg(f), r = await Face.detect(img, true);
       let unknown = 0;
       const items = r.map(x => { const m = Face.match(x.descriptor, gal, thr); if (m.name) { if (!found.has(m.name) || found.get(m.name) > m.dist) found.set(m.name, m.dist); } else unknown++; return {box: x.detection.box, label: m.name || "؟", ok: !!m.name}; });
-      const pc = $("#pc"); pc.width = img.naturalWidth; pc.height = img.naturalHeight;
+      const pc = $("#pc"); pc.width = img.width; pc.height = img.height;
       pc.getContext("2d").drawImage(img, 0, 0); const sc = document.createElement("canvas");
-      drawBoxes(sc, img.naturalWidth, img.naturalHeight, items); pc.getContext("2d").drawImage(sc, 0, 0);
+      drawBoxes(sc, img.width, img.height, items); pc.getContext("2d").drawImage(sc, 0, 0);
       summary(); st.textContent = `${fa(r.length)} چهره، ${fa(unknown)} ناشناس · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`;
     };
   }
@@ -204,7 +212,7 @@ async function viewAttend(c) {
 
 
 /* ---------- ثبت چهره در صفحهٔ «تعریف افراد»: شناخته‌شده‌ها نمونه می‌گیرند، ناشناس‌ها «بدون نام» می‌شوند ---------- */
-const SCAN = {thr: .5, addBelow: .42, dup: .15, max: 10};
+const SCAN = {get thr() { return VP("match_thr"); }, get addBelow() { return VP("add_below"); }, get dup() { return VP("dup"); }, get max() { return VP("max_faces"); }};
 function scanPanel(c, host, mode, onChange) {
   c.faces = c.faces || {}; c.unknown = c.unknown || [];
   const stat = {known: new Set(), added: 0, fresh: 0};
@@ -223,7 +231,7 @@ function scanPanel(c, host, mode, onChange) {
   // یک چهره را پردازش می‌کند؛ برچسب برمی‌گرداند
   const handle = (det, src) => {
     const d = Array.from(det.descriptor), box = det.detection.box;
-    if (det.detection.score < .6 || box.width < 50) return {label: "…", ok: false};
+    if (det.detection.score < Math.min(.95, VP("det_score") + .1) || box.width < VP("min_face")) return {label: "…", ok: false};
     const {best, bd} = identify(det.descriptor), sample = () => ({d, t: thumbOf(src, box)});
     if (best && bd <= SCAN.thr) {
       if (best.kind === "p") {
@@ -236,7 +244,7 @@ function scanPanel(c, host, mode, onChange) {
       if (l.length < SCAN.max && minDist(det.descriptor, l) > SCAN.dup) { l.push(sample()); save(); onChange(); }
       return {label: "بدون نام " + fa(c.unknown.indexOf(best.u) + 1), ok: false};
     }
-    if (best && bd <= SCAN.thr + .06) return {label: "؟", ok: false};     // مبهم: نه اضافه کن نه ناشناس تازه بساز
+    if (best && bd <= SCAN.thr + VP("unk_margin")) return {label: "؟", ok: false};     // مبهم: نه اضافه کن نه ناشناس تازه بساز
     const u = {id: uid(), s: [sample()]}; c.unknown.push(u); stat.fresh++; save(); onChange();
     return {label: "بدون نام " + fa(c.unknown.length), ok: false};
   };
@@ -249,9 +257,9 @@ function scanPanel(c, host, mode, onChange) {
       st.textContent = "در حال تشخیص…"; const t0 = performance.now();
       const img = await loadImg(f), r = await Face.detect(img, true);
       const items = r.map(x => { const h = handle(x, img); return {box: x.detection.box, label: h.label, ok: h.ok}; });
-      const pc = host.querySelector("#pc"); pc.width = img.naturalWidth; pc.height = img.naturalHeight;
+      const pc = host.querySelector("#pc"); pc.width = img.width; pc.height = img.height;
       pc.getContext("2d").drawImage(img, 0, 0); const sc = document.createElement("canvas");
-      drawBoxes(sc, img.naturalWidth, img.naturalHeight, items); pc.getContext("2d").drawImage(sc, 0, 0);
+      drawBoxes(sc, img.width, img.height, items); pc.getContext("2d").drawImage(sc, 0, 0);
       report(`${fa(r.length)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`);
     };
     return;
@@ -272,7 +280,7 @@ function scanPanel(c, host, mode, onChange) {
           drawBoxes(ov, vd.videoWidth, vd.videoHeight, r.map(x => { const h = handle(x, vd); return {box: x.detection.box, label: h.label, ok: h.ok}; }));
           report(`${fa(r.length)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`);
         } catch (e) {}
-        setTimeout(tick, 200);
+        setTimeout(tick, VP("live_ms"));
       };
       tick();
     };
