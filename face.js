@@ -153,11 +153,38 @@ async function viewEnroll(c, idx) {
   run();
 }
 
+/* چند عکس: تب‌ها + swipe بین عکس‌ها */
+function photoShots(pc, tabs, onShow) {
+  const o = {list: [], i: -1};
+  o.show = (i, dir = 0) => {
+    if (i < 0 || i >= o.list.length) return; o.i = i; onShow(o.list[i]); o.draw();
+    if (dir && pc.animate) pc.animate([{opacity: .25, transform: `translateX(${dir * 36}px)`}, {opacity: 1, transform: "none"}], 200);
+  };
+  o.draw = () => {
+    tabs.hidden = o.list.length < 2;
+    tabs.innerHTML = o.list.map((s, k) => `<button class="tab${k === o.i ? " on" : ""}" data-k="${k}">عکس ${fa(k + 1)} <small>${fa(s.faces.length)}</small></button>`).join("");
+    tabs.querySelectorAll("[data-k]").forEach(b => b.onclick = () => o.show(+b.dataset.k, +b.dataset.k > o.i ? -1 : 1));
+    tabs.querySelector(".on")?.scrollIntoView({block: "nearest", inline: "center"});
+  };
+  let x0 = 0, y0 = 0, on = false;
+  pc.addEventListener("pointerdown", e => { x0 = e.clientX; y0 = e.clientY; on = true; });
+  pc.addEventListener("pointerup", e => {
+    if (!on) return; on = false;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy) && o.list.length > 1) {      // فارسی: swipe به راست = عکس بعدی
+      const next = isEn() ? dx < 0 : dx > 0; o.show(o.i + (next ? 1 : -1), next ? -1 : 1) ; pc._sw = 1; setTimeout(() => pc._sw = 0, 400);
+    }
+  });
+  pc.style.touchAction = "pan-y";
+  return o;
+}
+
 /* ---------- لمس روی عکس پردازش‌شده (مشترک بین «حضور و غیاب» و «تعریف افراد») ----------
    لمس کادر = ثبت نام / تغییر فرد؛ لمس جای دیگر = پردازش مجدد اطراف همان نقطه برای پیدا کردن چهرهٔ جاافتاده */
 function bindPhotoTap(pc, c, h) {
   let busy = false;
   pc.onclick = async e => {
+    if (pc._sw) return;
     const img = h.img(); if (!img || busy) return;
     const rc = pc.getBoundingClientRect(), x = (e.clientX - rc.left) * pc.width / rc.width, y = (e.clientY - rc.top) * pc.height / rc.height;
     const hit = h.faces().filter(f => x >= f.box.x && x <= f.box.x + f.box.width && y >= f.box.y && y <= f.box.y + f.box.height).sort((p, q) => p.box.width - q.box.width)[0];
@@ -207,6 +234,7 @@ async function viewAttend(c) {
     Face.stopCam(); modeEl.innerHTML = cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button><button class="btn soft" id="clr" style="flex:1">پاک کردن فهرست</button></div><div class="muted" id="st"></div>`;
     const cm = $("#cm"), vd = $("#vd"), ov = $("#ov"), st = $("#st"); let facing = "environment";
     try { cm.textContent = "در حال بارگذاری…"; await Face.load(t => cm.textContent = t); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود"; return; }
+    if (!vd.isConnected) return;                           // کاربر در همین حین به حالت «عکس» رفته است
     const err = needSecure(); if (err) { cm.textContent = err; return; }
     const run = async () => {
       try { await Face.startCam(vd, facing); } catch (e) { cm.textContent = "اجازهٔ دوربین داده نشد"; return; }
@@ -229,8 +257,9 @@ async function viewAttend(c) {
     run();
   }
   function photoMode() {
-    Face.stopCam(); modeEl.innerHTML = `<div class="row"><button class="btn" id="pk" style="flex:1">انتخاب یا گرفتن عکس کلاس</button></div><input type="file" id="fi" accept="image/*" hidden><div class="photo"><canvas id="pc"></canvas></div><div class="muted" id="st"></div><div class="muted" id="hint" hidden>روی کادر زرد بزن تا ثبت نام شود؛ روی کادر سبز بزن تا چهره به فرد دیگری نسبت داده شود؛ روی چهرهٔ بدون کادر بزن تا همان اطراف دوباره پردازش شود.</div>`;
-    const srcOf = new Map(); let faces = [], curImg = null;      // نام ← مجموعهٔ چهره‌هایی که او را «حاضر» کرده‌اند
+    Face.stopCam(); modeEl.innerHTML = `<div class="row"><button class="btn" id="pk" style="flex:1">انتخاب یا گرفتن عکس کلاس</button></div><input type="file" id="fi" accept="image/*" multiple hidden><div class="tabs" id="tb" hidden></div><div class="photo"><canvas id="pc"></canvas></div><div class="muted" id="st"></div><div class="muted" id="hint" hidden>روی کادر زرد بزن تا ثبت نام شود؛ روی کادر سبز بزن تا چهره به فرد دیگری نسبت داده شود؛ روی چهرهٔ بدون کادر بزن تا همان اطراف دوباره پردازش شود.</div>`;
+    const srcOf = new Map(); let faces = [], curImg = null;
+    const shots = photoShots($("#pc"), $("#tb"), s => { curImg = s.img; faces = s.faces; redraw(); });      // نام ← مجموعهٔ چهره‌هایی که او را «حاضر» کرده‌اند
     const mark = (n, f) => { (srcOf.get(n) || srcOf.set(n, new Set()).get(n)).add(f); if (!found.has(n) || found.get(n) > f.dist) found.set(n, f.dist); };
     const redraw = () => {
       const pc = $("#pc"); pc.width = curImg.width; pc.height = curImg.height;
@@ -247,17 +276,19 @@ async function viewAttend(c) {
       gal = Face.gallery(c); save(); redraw(); summary(); toast(`«${v}» ثبت شد`);
     };
     bindPhotoTap($("#pc"), c, {img: () => curImg, faces: () => faces, assign, redraw, msg: s => $("#st").textContent = s,
-      absorb: d => { const m = Face.match(d.descriptor, gal, thr), f = {box: d.detection.box, d: d.descriptor, name: m.name, dist: m.dist}; faces.push(f); if (m.name) mark(m.name, f); summary(); return f; }});
+      absorb: d => { const m = Face.match(d.descriptor, gal, thr), f = {box: d.detection.box, d: d.descriptor, name: m.name, dist: m.dist}; faces.push(f); if (m.name) mark(m.name, f); summary(); shots.draw(); return f; }});
     $("#fi").onchange = async e => {
-      const f = e.target.files[0]; if (!f) return; e.target.value = ""; const st = $("#st");
+      const fs = [...e.target.files]; if (!fs.length) return; e.target.value = ""; const st = $("#st");
       try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(t => st.textContent = t); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
-      st.textContent = "در حال تشخیص…"; const t0 = performance.now();
-      const img = await loadImg(f), r = await Face.detect(img, true);
-      curImg = img; faces = r.map(x => ({box: x.detection.box, d: x.descriptor, name: null, dist: 9}));
-      let unknown = 0;
-      r.forEach((x, i) => { const m = Face.match(x.descriptor, gal, thr); faces[i].dist = m.dist; if (m.name) { faces[i].name = m.name; mark(m.name, faces[i]); } else unknown++; });
-      redraw(); $("#hint").hidden = false;
-      summary(); st.textContent = `${fa(r.length)} چهره، ${fa(unknown)} ناشناس · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`;
+      const first = shots.list.length; let total = 0, nu = 0; const t0 = performance.now();
+      for (let k = 0; k < fs.length; k++) {
+        st.textContent = fs.length > 1 ? `در حال تشخیص عکس ${fa(k + 1)} از ${fa(fs.length)}…` : "در حال تشخیص…";
+        const img = await loadImg(fs[k]), r = await Face.detect(img, true), fl = [];
+        r.forEach(x => { const m = Face.match(x.descriptor, gal, thr), f = {box: x.detection.box, d: x.descriptor, name: m.name, dist: m.dist}; fl.push(f); if (m.name) mark(m.name, f); else nu++; });
+        shots.list.push({img, faces: fl}); total += r.length;
+      }
+      shots.show(first); $("#hint").hidden = false; summary();
+      st.textContent = `${fa(fs.length)} عکس · ${fa(total)} چهره، ${fa(nu)} ناشناس · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`;
     };
   }
   page.querySelectorAll("[data-m]").forEach(ch => ch.onclick = () => {
@@ -274,7 +305,7 @@ function scanPanel(c, host, mode, onChange) {
   c.faces = c.faces || {}; c.unknown = c.unknown || [];
   const stat = {known: new Set(), added: 0, fresh: 0};
   host.innerHTML = (mode === "cam" ? cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button></div>`
-    : `<div class="row"><button class="btn" id="pk" style="flex:1">انتخاب یا گرفتن عکس</button></div><input type="file" id="fi" accept="image/*" hidden><div class="photo"><canvas id="pc"></canvas></div>`) +
+    : `<div class="row"><button class="btn" id="pk" style="flex:1">انتخاب یا گرفتن عکس</button></div><input type="file" id="fi" accept="image/*" multiple hidden><div class="tabs" id="tb" hidden></div><div class="photo"><canvas id="pc"></canvas></div>`) +
     `<div class="muted" id="st"></div>`;
   const st = host.querySelector("#st");
   const minDist = (d, list) => list.reduce((m, s) => Math.min(m, faceapi.euclideanDistance(d, new Float32Array(s.d))), 9);
@@ -318,7 +349,8 @@ function scanPanel(c, host, mode, onChange) {
       pc.width = curImg.width; pc.height = curImg.height; pc.getContext("2d").drawImage(curImg, 0, 0);
       const sc = document.createElement("canvas"); drawBoxes(sc, curImg.width, curImg.height, faces.map(f => ({box: f.box, label: f.label, ok: f.ok}))); pc.getContext("2d").drawImage(sc, 0, 0);
     };
-    const absorb = (x, force) => { const h = handle(x, curImg, force); const f = {box: x.detection.box, d: x.descriptor, ...h}; faces.push(f); return f; };
+    const absorb = (x, force) => { const h = handle(x, curImg, force); const f = {box: x.detection.box, d: x.descriptor, ...h}; faces.push(f); shots.draw(); return f; };
+    const shots = photoShots(pc, host.querySelector("#tb"), s => { curImg = s.img; faces = s.faces; redraw(); });
     const assign = async (hit, v, th) => {
       if (!c.people.includes(v)) c.people.push(v);
       const l = (c.faces[v] = c.faces[v] || []), room = () => l.length < SCAN.max;
@@ -337,13 +369,17 @@ function scanPanel(c, host, mode, onChange) {
     bindPhotoTap(pc, c, {img: () => curImg, faces: () => faces, assign, redraw, msg: s => st.textContent = s, absorb: d => { const f = absorb(d, true); onChange(); return f; }});
     host.querySelector("#pk").onclick = () => host.querySelector("#fi").click();
     host.querySelector("#fi").onchange = async e => {
-      const f = e.target.files[0]; if (!f) return; e.target.value = "";
+      const fs = [...e.target.files]; if (!fs.length) return; e.target.value = "";
       try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(t => st.textContent = t); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
-      st.textContent = "در حال تشخیص…"; const t0 = performance.now();
-      const img = await loadImg(f), r = await Face.detect(img, true);
-      curImg = img; faces = []; r.forEach(x => absorb(x, false));
-      redraw(); report(`${fa(r.length)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`);
-      hint.hidden = false;
+      const first = shots.list.length; let total = 0; const t0 = performance.now();
+      for (let k = 0; k < fs.length; k++) {
+        st.textContent = fs.length > 1 ? `در حال تشخیص عکس ${fa(k + 1)} از ${fa(fs.length)}…` : "در حال تشخیص…";
+        const img = await loadImg(fs[k]), r = await Face.detect(img, true), fl = [];
+        r.forEach(x => { const h = handle(x, img, false); fl.push({box: x.detection.box, d: x.descriptor, ...h}); });
+        shots.list.push({img, faces: fl}); total += r.length;
+      }
+      shots.show(first); hint.hidden = false;
+      report(`${fa(fs.length)} عکس · ${fa(total)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`);
     };
     return;
   }

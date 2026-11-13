@@ -226,3 +226,19 @@ dialog input[type=text]{width:100%}
 .mico{width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center;color:var(--ac,var(--primary));background:color-mix(in srgb,var(--ac,var(--primary)) 16%,transparent)}
 .mico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @media (orientation:landscape){.mico{width:30px;height:30px;border-radius:10px}.mico svg{width:18px;height:18px}}
+/* نمودار صفحهٔ اول */
+.cbc{height:150px;gap:8px;padding-top:6px}
+.cc{flex:none;width:72px;height:100%;display:flex;flex-direction:column;gap:2px}
+.ccb{flex:1;display:flex;gap:3px;align-items:stretch;min-height:0}
+.cx{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;min-width:0}
+.cx em{font-style:normal;font-size:10px;color:var(--muted);text-align:center;height:13px;line-height:13px}
+.cx .sb{display:block;background:var(--accent);border-radius:3px;min-height:0}
+.cx .sl{display:block;opacity:.5;background:repeating-linear-gradient(to top,var(--accent) 0 calc(var(--st)*5/6),transparent calc(var(--st)*5/6) var(--st))}
+.cn{font-size:10px;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:14px}
+.sqL{background:repeating-linear-gradient(to top,var(--muted) 0 2px,transparent 2px 3px);opacity:.6}
+.land-only{display:none}
+@media (orientation:landscape){.land-only{display:grid}.ib.on{background:color-mix(in srgb,var(--primary) 35%,transparent)}}
+/* چند عکس: تب‌ها */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px}
+.tab{flex:none;border:0;border-radius:999px;padding:6px 14px;background:var(--card2);color:var(--text);font:inherit;font-size:13px}
+.tab.on{background:var(--primary);color:var(--on-primary)}.tab small{opacity:.8;margin-inline-start:4px}

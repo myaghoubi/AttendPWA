@@ -1,11 +1,11 @@
 "use strict";
 /* تنظیمات برنامه: تم‌ها، ظاهر، حالت افقی، پارامترهای شناسایی چهره، پشتیبان‌گیری */
-const DEFAULTS = {theme: "system", lang: "fa", cal: "jalali", limit: 6, landCols: 2, undoK: 1, nameW: 140, vp: {},
+const DEFAULTS = {theme: "system", lang: "fa", landCharts: false, cal: "jalali", limit: 6, landCols: 2, undoK: 1, nameW: 140, vp: {},
   md: {on: false, url: "", token: "", service: "moodle_mobile_app", proxy: "", user: null}};
 function normSettings() {
   const old = S.settings || {};
   S.settings = Object.assign({}, DEFAULTS, old, {vp: Object.assign({}, old.vp), md: Object.assign({}, DEFAULTS.md, old.md)});
-  S.settings.lang = S.settings.lang === "en" ? "en" : "fa";
+  S.settings.lang = S.settings.lang === "en" ? "en" : "fa"; S.settings.landCharts = !!S.settings.landCharts;
   if (!["system", "dark", "black", "light"].includes(S.settings.theme)) S.settings.theme = "system";
   document.documentElement.style.setProperty("--lc", S.settings.landCols);
 }

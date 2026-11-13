@@ -1,6 +1,21 @@
 // خودکار ساخته می‌شود (pwa_release.py). RELEASES: فهرست فایل‌های تغییرکرده در هر نسخه، جدیدترین اول.
-const APP_VERSION = "1.7.7";
+const APP_VERSION = "1.8.0";
 const RELEASES = [
+ {
+  "v": "1.8.0",
+  "date": "2026-11-13",
+  "fa": "نمودار صفحهٔ اول (دانشجو و جلسه هر درس) با کلید نمودار در حالت افقی؛ انتخاب چند عکس با تب و swipe در تعریف افراد و حضور و غیاب",
+  "en": "Home-page chart (students and sessions per course) with a landscape chart switch; multiple photos with tabs and swipe on People and Attendance",
+  "files": [
+   "app.js",
+   "face.js",
+   "i18n.js",
+   "settings.js",
+   "style.css",
+   "sw.js",
+   "version.js"
+  ]
+ },
  {
   "v": "1.7.7",
   "date": "2026-11-13",
