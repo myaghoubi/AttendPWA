@@ -1,6 +1,17 @@
 // خودکار ساخته می‌شود (pwa_release.py). RELEASES: فهرست فایل‌های تغییرکرده در هر نسخه، جدیدترین اول.
-const APP_VERSION = "1.9.0";
+const APP_VERSION = "1.9.1";
 const RELEASES = [
+ {
+  "v": "1.9.1",
+  "date": "2026-11-13",
+  "fa": "تغییر شمارهٔ موبایل و شمارهٔ کارت توسعه‌دهنده",
+  "en": "Updated developer mobile and card numbers",
+  "files": [
+   "activation.js",
+   "sw.js",
+   "version.js"
+  ]
+ },
  {
   "v": "1.9.0",
   "date": "2026-11-13",
