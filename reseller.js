@@ -44,7 +44,7 @@ async function viewReseller() {
   if (!RES.pub) await resLoad();
   const L = LIC_INFO, left = resLeft(), cp = async (t, ok) => { try { await navigator.clipboard.writeText(t); toast(ok); } catch (e) { toast(t); } };
   const ltr = "dir=\"ltr\" style=\"word-break:break-all;user-select:all;font-weight:700;font-size:14px;background:var(--card2);border-radius:10px;padding:8px\"";
-  const cardS = "display:flex;flex-direction:column;gap:8px;margin-top:10px", inp = "width:100%;box-shadow:none;background:var(--card2)";
+  const cardS = "display:flex;flex-direction:column;gap:8px;margin-top:10px", inp = "width:100%;box-shadow:none;background:var(--card2);font-size:16px";
   show(`<div class="vcard" style="${cardS.replace("margin-top:10px", "")}"><b>ظرفیت</b>
       <div style="display:flex;justify-content:space-around;text-align:center"><div><div style="font-size:26px;font-weight:700">${fa(RES.total)}</div><div class="muted">کل</div></div>
       <div><div style="font-size:26px;font-weight:700">${fa(RES.issued.length)}</div><div class="muted">استفاده‌شده</div></div>

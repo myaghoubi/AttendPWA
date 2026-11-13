@@ -52,9 +52,9 @@ body{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 .avatar{width:44px;height:44px;border-radius:50%;background:var(--card2);display:grid;place-items:center;
   font-weight:700;color:var(--primary);flex:none}
 .row{display:flex;gap:8px}
-input[type=text],input[type=password],input[type=url]{flex:1;min-width:0;border:2px solid transparent;background:var(--card);color:var(--text);
+input[type=text],input[type=password],input[type=url],input[type=number]{flex:1;min-width:0;border:2px solid transparent;background:var(--card);color:var(--text);
   border-radius:14px;padding:13px 14px;font:inherit;box-shadow:var(--shadow);outline:0}
-input[type=text]:focus,input[type=password]:focus,input[type=url]:focus{border-color:var(--primary)}
+input[type=text]:focus,input[type=password]:focus,input[type=url]:focus,input[type=number]:focus{border-color:var(--primary)}
 .btn{border:0;border-radius:14px;padding:12px 18px;font:inherit;font-weight:700;cursor:pointer;
   background:var(--primary);color:var(--on-primary)}
 .btn.soft{background:var(--card2);color:var(--text)}
@@ -250,3 +250,5 @@ dialog input[type=text]{width:100%}
 .about>.vcard,.about>.btn{align-self:stretch}
 .about p,.about h2{margin:0}.about h2{margin-top:4px}.about p.muted{line-height:1.5}
 .about{gap:4px}.about>.vcard,.about>#qrb{margin-top:8px!important}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
