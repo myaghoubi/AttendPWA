@@ -311,6 +311,7 @@ async function viewAttend(c) {
     };
     $("#pk").onclick = () => $("#fi").click();
     const assign = async (hit, v, th) => {
+      if (!c.people.includes(v) && demoBlocks(c.people.length + 1)) return;
       if (!c.people.includes(v)) c.people.push(v);
       const l = (c.faces[v] = c.faces[v] || []);
       if (l.length < VP("max_faces")) l.push({d: Array.from(hit.d), t: th}); else toast("حداکثر نمونه ثبت شده؛ چهره فقط به همین عکس نسبت داده شد");
@@ -395,6 +396,7 @@ function scanPanel(c, host, mode, onChange) {
     const absorb = (x, force) => { const h = handle(x, curImg, force); const f = {box: x.detection.box, d: x.descriptor, ...h}; faces.push(f); shots.draw(); return f; };
     const shots = photoShots(pc, host.querySelector("#tb"), s => { curImg = s.img; faces = s.faces; redraw(); });
     const assign = async (hit, v, th) => {
+      if (!c.people.includes(v) && demoBlocks(c.people.length + 1)) return;
       if (!c.people.includes(v)) c.people.push(v);
       const l = (c.faces[v] = c.faces[v] || []), room = () => l.length < SCAN.max;
       if (hit.kind === "p" && hit.smp) { const o = c.faces[hit.name] || [], i = o.indexOf(hit.smp); if (i >= 0) o.splice(i, 1); }

@@ -8,6 +8,7 @@ const IC = {
   sync: '<path d="M20 7v5h-5M4 17v-5h5M5.5 9A7 7 0 0 1 18 7.5L20 12M18.5 15A7 7 0 0 1 6 16.5L4 12"/>', menu: '<path d="M4 7h16M4 12h16M4 17h16"/>', edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', cam: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
 };
 Object.assign(IC, {
+  key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/>',
   chart: '<path d="M7 20V12M12 20V5M17 20v-9M4 20h16"/>',
   sliders: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
   scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="2.5"/><path d="M7.5 17c.8-2.3 2.4-3.3 4.5-3.3s3.7 1 4.5 3.3"/>',
@@ -127,6 +128,7 @@ function route() {
     if (p[2] === "records") return viewRecords(course(p[1]));
     return viewCourse(course(p[1]));
   }
+  if (p[0] === "activate") return viewActivate();
   if (p[0] === "settings") return viewSettings();
   if (p[0] === "vision") return viewVision();
   if (p[0] === "about") return viewAbout();
@@ -178,7 +180,7 @@ function menuHtml() {
     ${item("#/settings", "sliders", "primary", "تنظیمات برنامه")}${item("#/vision", "scan", "ok", "شناسایی چهره")}${item("#/moodle", "cap", "warn", "تنظیمات اتصال به مودل")}
     ${item("#/", "book", "primary", "فهرست دروس من")}${item("#/settings", "down", "ok", "پشتیبان‌گیری و بازیابی از فایل")}
     ${left.length ? `<div class="section">بازیابی</div>` + left.map(e => `<button class="mi" data-r="${e.id}"><span class="mico" style="--ac:var(--danger)">${icon("undo")}</span><span class="mt">برگردان ${KIND[e.kind]}<small>${esc(e.label)}</small></span>${ring(e)}</button>`).join("") : ""}
-    <div class="hr"></div>${item("#/about", "info", "primary", "درباره ما")}
+    <div class="hr"></div>${item("#/activate", "key", licensed() ? "ok" : "warn", licensed() ? "برنامه فعال است ✓" : "فعال‌سازی برنامه")}${item("#/about", "info", "primary", "درباره ما")}
     </nav>`;
   dr.querySelector(".scrim").onclick = closeMenu;
   dr.querySelectorAll("[data-h]").forEach(b => b.onclick = () => { closeMenu(); go(b.dataset.h); });
@@ -354,6 +356,7 @@ function viewPeople(c) {
       if (!v) return;
       const j = c.unknown.findIndex(y => y.id === x.id); if (j < 0) return;
       c.unknown.splice(j, 1); c.faces = c.faces || {};
+      if (!c.people.includes(v) && demoBlocks(c.people.length + 1)) return;
       if (!c.people.includes(v)) c.people.push(v);
       c.faces[v] = [...(c.faces[v] || []), ...x.s].slice(0, 10);
       save(); draw(); toast(`«${v}» ثبت شد`);
@@ -378,6 +381,7 @@ function viewPeople(c) {
     const v = $("#nm").value.trim();
     if (!v) return;
     if (c.people.includes(v)) return toast("این نام قبلاً هست");
+    if (demoBlocks(c.people.length + 1)) return;
     c.people.push(v); save(); $("#nm").value = ""; draw(); $("#nm").focus();
   };
   page.querySelectorAll("[data-sm]").forEach(ch => ch.onclick = () => {
@@ -397,6 +401,7 @@ function viewPeople(c) {
   const d = await Store.get("state");
   if (d && Array.isArray(d.courses)) S = {v: 1, ...d};
   normSettings(); applyTheme(); applyLang();
+  await licInit();
   navigator.storage?.persist?.();                       // جلوگیری از پاک شدن خودکار داده‌ها
   addEventListener("hashchange", route);
   route();

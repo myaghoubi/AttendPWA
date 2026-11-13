@@ -179,10 +179,11 @@ async function planPeople(c) {
   return items;
 }
 async function applyPeople(c, items) {
-  let ok = 0; const err = [], m = mdl(c);
+  let ok = 0, stop = false; const err = [], m = mdl(c);
   for (const it of items) if (it.on) {
     try {
       if (it.kind === "link") m.users[it.n] = it.r.id;
+      else if (stop || (stop = demoBlocks(c.people.length + 1))) continue;       // نسخهٔ آزمایشی: سقف تعداد
       else { let n = it.r.name, k = 2; while (c.people.includes(n)) n = `${it.r.name} (${k++})`; c.people.push(n); m.users[n] = it.r.id; }
       ok++;
     } catch (e) { err.push(`${it.text}: ${e.message}`); }
