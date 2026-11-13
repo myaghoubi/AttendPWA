@@ -141,6 +141,7 @@ function viewSettings() {
       const d = JSON.parse(await f.text());
       if (!Array.isArray(d.courses)) throw 0;
       if (!await ask({title: "بازیابی", text: "همهٔ اطلاعات فعلی (تنظیمات، دروس، افراد، سوابق) با این پشتیبان جایگزین می‌شود.", ok: "جایگزین کن", danger: true})) return;
+      if (d.courses.some(c => demoBlocks((c.people || []).length))) return;      // نسخهٔ آزمایشی: پشتیبان با بیش از سقف مجاز پذیرفته نمی‌شود
       S = {v: 1, ...d}; normSettings(); save(); applyTheme(); applyLang(); toast("بازیابی شد"); go("#/");
     } catch (_) { toast("فایل پشتیبان معتبر نیست"); }
   };

@@ -161,6 +161,7 @@ function trashRestore(id) {
     const c = course(d.cid || d.c);
     if (!c) return toast("درس این مورد دیگر وجود ندارد");
     if (e.kind === "person") {
+      if (!c.people.includes(d.n) && demoBlocks(c.people.length + 1)) return;
       c.people.splice(Math.min(d.i, c.people.length), 0, d.n);
       if (d.fs) (c.faces = c.faces || {})[d.n] = d.fs;
       (c.sessions || []).forEach(s => { if (d.marks[s.id] !== undefined) s.marks[d.n] = d.marks[s.id]; });
@@ -382,8 +383,8 @@ function viewPeople(c) {
       const v = await pickName(c, x);
       if (!v) return;
       const j = c.unknown.findIndex(y => y.id === x.id); if (j < 0) return;
-      c.unknown.splice(j, 1); c.faces = c.faces || {};
       if (!c.people.includes(v) && demoBlocks(c.people.length + 1)) return;
+      c.unknown.splice(j, 1); c.faces = c.faces || {};
       if (!c.people.includes(v)) c.people.push(v);
       c.faces[v] = [...(c.faces[v] || []), ...x.s].slice(0, 10);
       save(); draw(); toast(`«${v}» ثبت شد`);
