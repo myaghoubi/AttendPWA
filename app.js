@@ -7,6 +7,15 @@ const IC = {
   back: '<path d="M9 6l6 6-6 6"/>', plus: '<path d="M12 5v14M5 12h14"/>', trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/>',
   sync: '<path d="M20 7v5h-5M4 17v-5h5M5.5 9A7 7 0 0 1 18 7.5L20 12M18.5 15A7 7 0 0 1 6 16.5L4 12"/>', menu: '<path d="M4 7h16M4 12h16M4 17h16"/>', edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', cam: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
 };
+Object.assign(IC, {
+  sliders: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
+  scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="2.5"/><path d="M7.5 17c.8-2.3 2.4-3.3 4.5-3.3s3.7 1 4.5 3.3"/>',
+  cap: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c3 2.5 9 2.5 12 0v-4.5M22 9v6"/>',
+  book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
+  down: '<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  undo: '<path d="M4 9h10a5 5 0 0 1 0 10H8M4 9l4-4M4 9l4 4"/>',
+});
 const icon = n => `<svg viewBox="0 0 24 24">${IC[n]}</svg>`;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -158,17 +167,17 @@ function menuHtml() {
   const dr = $("#drawer"), left = S.trash.slice().reverse(), md = mdc();
   const ring = e => { const rem = Math.max(0, HOLD - (Date.now() - e.t)), m = Math.ceil(rem / 60000);
     return `<span class="ring" style="--p:${Math.round(rem / HOLD * 360)}deg"><i>${fa(m)}</i></span>`; };
-  const item = (h, t, s = "") => `<button class="mi${cur(h)}" data-h="${h}"><span class="mt">${t}${s ? `<small>${s}</small>` : ""}</span></button>`;
+  const item = (h, ic, ac, t, s = "") => `<button class="mi${cur(h)}" data-h="${h}"><span class="mico" style="--ac:var(--${ac})">${icon(ic)}</span><span class="mt">${t}${s ? `<small>${s}</small>` : ""}</span></button>`;
   const u = md.on && md.user;
   const who = u ? `<div class="mu"><b>${esc(u.fullname || "")}</b><small>${esc(u.username || "")}</small><small>${esc(u.sitename || "")}</small><small dir="ltr">${esc(u.siteurl || md.url || "")}</small></div>`
     : `<div class="mu off"><small>مودل آفلاین</small></div>`;
   const cur = h => (location.hash || "#/") === h ? " cur" : "";
   dr.innerHTML = `<div class="scrim"></div><nav>
     <div class="nh">حضور و غیاب</div>${who}<div class="hr"></div>
-    ${item("#/settings", "تنظیمات برنامه")}${item("#/vision", "شناسایی چهره")}${item("#/moodle", "تنظیمات اتصال به مودل")}
-    ${item("#/", "فهرست دروس من")}${item("#/settings", "پشتیبان‌گیری و بازیابی از فایل")}
-    ${left.length ? `<div class="section">بازیابی</div>` + left.map(e => `<button class="mi" data-r="${e.id}"><span class="mt">برگردان ${KIND[e.kind]}<small>${esc(e.label)}</small></span>${ring(e)}</button>`).join("") : ""}
-    <div class="hr"></div>${item("#/about", "درباره ما")}
+    ${item("#/settings", "sliders", "primary", "تنظیمات برنامه")}${item("#/vision", "scan", "ok", "شناسایی چهره")}${item("#/moodle", "cap", "warn", "تنظیمات اتصال به مودل")}
+    ${item("#/", "book", "primary", "فهرست دروس من")}${item("#/settings", "down", "ok", "پشتیبان‌گیری و بازیابی از فایل")}
+    ${left.length ? `<div class="section">بازیابی</div>` + left.map(e => `<button class="mi" data-r="${e.id}"><span class="mico" style="--ac:var(--danger)">${icon("undo")}</span><span class="mt">برگردان ${KIND[e.kind]}<small>${esc(e.label)}</small></span>${ring(e)}</button>`).join("") : ""}
+    <div class="hr"></div>${item("#/about", "info", "primary", "درباره ما")}
     </nav>`;
   dr.querySelector(".scrim").onclick = closeMenu;
   dr.querySelectorAll("[data-h]").forEach(b => b.onclick = () => { closeMenu(); go(b.dataset.h); });
