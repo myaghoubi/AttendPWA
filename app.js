@@ -238,11 +238,11 @@ const relNote = r => (isEn() ? r.en : r.fa) || "";
 function viewAbout() {
   setBar("درباره ما", {back: "#/"});
   const cur = RELEASES[0];
-  show(`<div class="about"><img src="icons/icon-192.png" alt="" width="96" height="96">
+  show(`<div class="about"><img id="lg" src="icons/icon-192.png" alt="" width="96" height="96" style="-webkit-tap-highlight-color:transparent;user-select:none">
     <h2>سامانه حضور و غیاب تصویری</h2>
     <p class="muted">ایده‌پردازی و طراحی در پژوهشکدهٔ هوش مصنوعی دانشگاه گلستان</p><p class="muted">آبان ۱۴۰۵</p>
-    <div class="vcard" style="text-align:center"><b>درباره توسعه‌دهنده</b><div>مهدی یعقوبی</div><div class="muted">گروه مهندسی کامپیوتر</div><div class="muted">دانشگاه گلستان</div>
-      <div class="muted" dir="ltr">mehdi.yaghoubi@gmail.com</div><div class="muted">همکار توسعه: Claude (Anthropic) · دستیار هوش مصنوعی</div></div>
+    <div id="dev" hidden><div class="vcard" style="text-align:center"><b>درباره توسعه‌دهنده</b><div>مهدی یعقوبی</div><div class="muted">گروه مهندسی کامپیوتر</div><div class="muted">دانشگاه گلستان</div>
+      <div class="muted" dir="ltr">mehdi.yaghoubi@gmail.com</div><div class="muted">همکار توسعه: Claude (Anthropic) · دستیار هوش مصنوعی</div></div></div>
     <div class="vcard upd"><b>بروزرسانی برنامه</b>
       <div class="muted">نسخهٔ نصب‌شده: <span dir="ltr">${esc(APP_VERSION)}</span>${cur ? ` · <span dir="ltr">${esc(cur.date)}</span>` : ""}</div>
       ${cur ? `<div class="muted">${esc(relNote(cur))}</div>` : ""}
@@ -250,6 +250,11 @@ function viewAbout() {
       <details><summary>تاریخچهٔ نسخه‌ها</summary>${RELEASES.map(r => `<div class="rel"><b dir="ltr">${esc(r.v)}</b> <span class="muted" dir="ltr">${esc(r.date)}</span>
         <div class="muted">${esc(relNote(r))}</div><div class="fl" dir="ltr">${r.files.map(esc).join(" · ")}</div></div>`).join("")}</details></div></div>`);
   $("#up").onclick = checkUpdate;
+  let taps = 0, tt = 0;                                  // ۷ بار لمس لوگو: اطلاعات توسعه‌دهنده
+  $("#lg").onclick = () => {
+    const now = Date.now(); taps = now - tt > 2500 ? 1 : taps + 1; tt = now;
+    if (taps >= 7) { $("#dev").hidden = false; $("#dev").scrollIntoView({behavior: "smooth", block: "nearest"}); }
+  };
 }
 async function checkUpdate() {
   const us = $("#us"), up = $("#up"); us.textContent = "در حال بررسی…"; up.disabled = true;
