@@ -10,6 +10,7 @@ const IC = {
 Object.assign(IC, {
   key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/>',
   qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/>',
+  exit: '<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 8l-4 4 4 4M6 12h10"/>',
   chart: '<path d="M7 20V12M12 20V5M17 20v-9M4 20h16"/>',
   sliders: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
   scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="2.5"/><path d="M7.5 17c.8-2.3 2.4-3.3 4.5-3.3s3.7 1 4.5 3.3"/>',
@@ -181,11 +182,18 @@ function menuHtml() {
     ${item("#/settings", "sliders", "primary", "تنظیمات برنامه")}${item("#/vision", "scan", "ok", "شناسایی چهره")}${item("#/moodle", "cap", "warn", "تنظیمات اتصال به مودل")}
     ${item("#/", "book", "primary", "فهرست دروس من")}${item("#/settings", "down", "ok", "پشتیبان‌گیری و بازیابی از فایل")}
     ${left.length ? `<div class="section">بازیابی</div>` + left.map(e => `<button class="mi" data-r="${e.id}"><span class="mico" style="--ac:var(--danger)">${icon("undo")}</span><span class="mt">برگردان ${KIND[e.kind]}<small>${esc(e.label)}</small></span>${ring(e)}</button>`).join("") : ""}
-    <div class="hr"></div>${item("#/activate", "key", licensed() ? "ok" : "warn", licensed() ? "برنامه فعال است ✓" : "فعال‌سازی برنامه")}${item("#/about", "info", "primary", "درباره ما")}
+    <div class="hr"></div>${item("#/activate", "key", licensed() ? "ok" : "warn", licensed() ? "برنامه فعال است ✓" : "فعال‌سازی برنامه")}${item("#/about", "info", "primary", "درباره ما")}<button class="mi" id="mexit"><span class="mico" style="--ac:var(--danger)">${icon("exit")}</span><span class="mt">خروج</span></button>
     </nav>`;
   dr.querySelector(".scrim").onclick = closeMenu;
+  dr.querySelector("#mexit").onclick = exitApp;
   dr.querySelectorAll("[data-h]").forEach(b => b.onclick = () => { closeMenu(); go(b.dataset.h); });
   dr.querySelectorAll("[data-r]").forEach(b => b.onclick = () => trashRestore(b.dataset.r));
+}
+async function exitApp() {
+  closeMenu(); save();
+  if (!(await ask({title: "خروج", text: "از برنامه خارج شوی؟", ok: "خروج", danger: true}))) return;
+  window.close();                                       // مرورگر فقط پنجره‌هایی را که خودش باز کرده می‌بندد
+  setTimeout(() => toast("این دستگاه خروج از برنامه را نمی‌پذیرد؛ برنامه را از فهرست برنامه‌های اخیر ببند"), 400);
 }
 const isLand = () => matchMedia("(orientation:landscape)").matches;
 function openMenu() { menuHtml(); $("#drawer").classList.add("open"); }
