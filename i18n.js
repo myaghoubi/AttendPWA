@@ -4,7 +4,7 @@ const isEn = () => (typeof S !== "undefined" && S.settings?.lang) === "en";
 const EN = {
 "برگردان": "Undo", "تأیید": "OK", "انصراف": "Cancel", "نام جدید…": "New name…", "نام فرد": "Person's name", "ثبت": "Save",
 "نام تازه بنویس یا یکی از افراد تعریف‌شده را بزن؛ نمونه‌ها به همان فرد اضافه می‌شود.": "Type a new name or tap an existing person; the face samples will be added to that person.",
-"نام تازه ثبت می‌شود": "A new person will be created", "بازگشت": "Back", "منو": "Menu",
+"انتخاب از لیست": "Pick from list", "نام تازه بنویس یا از فهرست افراد انتخاب کن؛ نمونه‌ها به همان فرد اضافه می‌شود.": "Type a new name or pick from the people list; the samples will be added to that person.", "نام تازه ثبت می‌شود": "A new person will be created", "بازگشت": "Back", "منو": "Menu",
 "درس": "Course", "فرد": "Person", "جلسه": "Session", "ناشناس": "Unknown", "حذف شد": "deleted",
 "زمان بازیابی گذشته است": "Restore time has passed", "درس این مورد دیگر وجود ندارد": "The course of this item no longer exists", "بازیابی شد": "Restored",
 "مودل آفلاین": "Moodle offline", "حضور و غیاب": "Attendance", "تنظیمات برنامه": "App settings", "شناسایی چهره": "Face recognition",

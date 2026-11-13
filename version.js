@@ -1,6 +1,18 @@
 // خودکار ساخته می‌شود (pwa_release.py). RELEASES: فهرست فایل‌های تغییرکرده در هر نسخه، جدیدترین اول.
-const APP_VERSION = "1.7.2";
+const APP_VERSION = "1.7.3";
 const RELEASES = [
+ {
+  "v": "1.7.3",
+  "date": "2026-11-13",
+  "fa": "دیالوگ ثبت نام: عکس بزرگ بالای دیالوگ و دکمهٔ انتخاب از لیست افراد",
+  "en": "Name dialog: large photo on top and a pick-from-list button",
+  "files": [
+   "app.js",
+   "i18n.js",
+   "sw.js",
+   "version.js"
+  ]
+ },
  {
   "v": "1.7.2",
   "date": "2026-11-13",
