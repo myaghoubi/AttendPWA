@@ -1,6 +1,16 @@
 // خودکار ساخته می‌شود (pwa_release.py). RELEASES: فهرست فایل‌های تغییرکرده در هر نسخه، جدیدترین اول.
-const APP_VERSION = "1.7.1";
+const APP_VERSION = "1.7.2";
 const RELEASES = [
+ {
+  "v": "1.7.2",
+  "date": "2026-11-13",
+  "fa": "نسخهٔ آزمایشی بروزرسانی (بدون تغییر ظاهری)",
+  "en": "Update-test release (no visible change)",
+  "files": [
+   "sw.js",
+   "version.js"
+  ]
+ },
  {
   "v": "1.7.1",
   "date": "2026-11-13",
