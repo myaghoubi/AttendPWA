@@ -113,9 +113,10 @@ function setBar(title, {back, sub, right = "", acc} = {}) {
   if (acc) { bar.dataset.acc = acc; bar.style.setProperty("--acc", `var(--${acc})`); bar.style.setProperty("--on-acc", `var(--on-${acc})`); }
   else { delete bar.dataset.acc; }
   bar.innerHTML = (back ? `<button class="ib" id="bk" aria-label="بازگشت">${icon("back")}</button>` : "") +
-    `<h1>${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ""}</h1>${right}<button class="ib" id="mn" aria-label="منو">${icon("menu")}</button>`;
+    `<h1>${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ""}</h1>${right}<button class="ib" id="mn" aria-label="منو"><svg viewBox="0 0 24 24" class="ham" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 7h14"/><path d="M5 12h14"/><path d="M5 17h14"/></svg></button>`;
   if (back) $("#bk").onclick = () => go(back);
-  $("#mn").onclick = openMenu;
+  $("#mn").onclick = () => $("#drawer").classList.contains("open") ? closeMenu() : openMenu();
+  $("#mn").classList.toggle("open", $("#drawer").classList.contains("open"));
 }
 function show(html) { page.innerHTML = html; page.classList.remove("page-in"); void page.offsetWidth; page.classList.add("page-in"); window.scrollTo(0, 0); }
 const course = id => S.courses.find(c => c.id === id);
@@ -199,11 +200,11 @@ async function exitApp() {
   setTimeout(() => toast("این دستگاه خروج از برنامه را نمی‌پذیرد؛ برنامه را از فهرست برنامه‌های اخیر ببند"), 400);
 }
 const isLand = () => matchMedia("(orientation:landscape)").matches;
-function openMenu() { menuHtml(); $("#drawer").classList.add("open"); }
+function openMenu() { menuHtml(); document.documentElement.style.setProperty("--bh", bar.offsetHeight + "px"); $("#drawer").classList.add("open"); document.body.classList.add("menu-open"); $("#mn")?.classList.add("open"); }
 function renderDock() { if (isLand()) menuHtml(); }          // حالت افقی: منو همیشه سمت راست قفل است
 matchMedia("(orientation:landscape)").addEventListener?.("change", () => { closeMenu(); if (isLand()) menuHtml(); if (/^(#\/?|#\/c\/[^/]+)$/.test(location.hash)) route(); });
 setInterval(() => { if (isLand() && !document.hidden) menuHtml(); }, 30000);
-function closeMenu() { $("#drawer").classList.remove("open"); }
+function closeMenu() { $("#drawer").classList.remove("open"); document.body.classList.remove("menu-open"); $("#mn")?.classList.remove("open"); }
 
 /* ---------- دروس ---------- */
 const chartsOn = () => !isLand() || S.settings.landCharts;               // عمودی: همیشه؛ افقی: فقط وقتی کلید نمودار روشن است

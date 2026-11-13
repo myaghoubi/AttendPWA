@@ -120,13 +120,13 @@ tr.red td.mP,tr.red td.mL,tr.red td.mE{}
 #drawer .scrim{position:absolute;inset:0;background:rgba(2,6,23,.5);opacity:0;transition:opacity .22s}
 #drawer nav{position:absolute;top:0;bottom:0;inset-inline-start:0;width:min(82vw,320px);background:var(--card);
   transform:translateX(100%);transition:transform .24s;padding:calc(env(safe-area-inset-top) + 14px) 14px 20px;overflow:auto;
-  display:flex;flex-direction:column;gap:6px;box-shadow:-8px 0 30px rgba(0,0,0,.25)}
+  display:flex;flex-direction:column;gap:2px;box-shadow:-8px 0 30px rgba(0,0,0,.25)}
 [dir=ltr] #drawer nav{transform:translateX(-100%)}
 #drawer.open{pointer-events:auto}
 #drawer.open .scrim{opacity:1}
 #drawer.open nav{transform:none}
 .nh{font-weight:800;font-size:21px;padding:6px 8px 14px;color:var(--primary)}
-.mi{display:flex;align-items:center;gap:12px;border:0;background:none;color:inherit;font:inherit;padding:13px 10px;border-radius:12px;cursor:pointer;text-align:start}
+.mi{display:flex;align-items:center;gap:12px;border:0;background:none;color:inherit;font:inherit;padding:7px 10px;border-radius:12px;cursor:pointer;text-align:start}
 .mi:active{background:var(--card2)}
 .mt{flex:1;display:flex;flex-direction:column}.mt small{color:var(--muted);font-size:14px;margin-top:2px}
 .ring{width:38px;height:38px;border-radius:50%;background:conic-gradient(var(--primary) var(--p),var(--card2) 0);display:grid;place-items:center;flex:none}
@@ -252,3 +252,12 @@ dialog input[type=text]{width:100%}
 .about{gap:4px}.about>.vcard,.about>#qrb{margin-top:8px!important}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+/* دکمهٔ همبرگری: سه خط به ضربدر تبدیل می‌شود (مثل برنامهٔ اصلی) و منو زیر نوار باز می‌شود */
+.ham path{transform-box:fill-box;transform-origin:center;transition:transform .25s cubic-bezier(.33,1,.68,1),opacity .15s}
+#mn.open .ham path:nth-child(1){transform:translateY(5px) rotate(45deg)}
+#mn.open .ham path:nth-child(2){transform:scaleX(0);opacity:0}
+#mn.open .ham path:nth-child(3){transform:translateY(-5px) rotate(-45deg)}
+@media (orientation:portrait){
+  body.menu-open #bar{z-index:31}
+  #drawer nav{padding-top:calc(var(--bh,56px) + 8px)}
+}

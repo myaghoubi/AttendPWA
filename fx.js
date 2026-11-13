@@ -1,5 +1,5 @@
-/* افکت‌های کلی مثل برنامهٔ اصلی: کادر یا دکمه‌ای که لمس شد به دیالوگ یا صفحهٔ تازه تبدیل می‌شود (رشد + محو شدن).
-   لمس آخر را نگه می‌دارد؛ اگر کمتر از ۱.۵ ثانیه بعد دیالوگی باز شود یا صفحه عوض شود، افکت اجرا می‌شود. */
+/* افکت‌های کلی مثل برنامهٔ اصلی: کادر یا دکمه‌ای که لمس شد به دیالوگ تبدیل می‌شود (رشد + محو شدن؛ برای صفحه افکتی نیست).
+   لمس آخر را نگه می‌دارد؛ اگر کمتر از ۱.۵ ثانیه بعد دیالوگی باز شود، افکت اجرا می‌شود. */
 const FX = {tap: null, DUR: 320};
 (() => {
   const reduce = () => matchMedia("(prefers-reduced-motion:reduce)").matches;
@@ -53,20 +53,6 @@ const FX = {tap: null, DUR: 320};
       overlay(k, r, "20px", col().getPropertyValue("--card").trim() || "#fff", false);
     }
   };
-  // ----- صفحه: بعد از ساخته شدن صفحهٔ تازه
-  addEventListener("load", () => {
-    const orig = window.show;
-    if (typeof orig !== "function") return;
-    window.show = function (html) {
-      const k = !reduce() && !document.querySelector("dialog[open]") ? take() : null;
-      orig.call(this, html);
-      if (!k) return;
-      page.classList.remove("page-in");
-      const pr = page.getBoundingClientRect();
-      const to = {left: pr.left, top: Math.max(pr.top, 0), width: pr.width, height: Math.min(pr.height, innerHeight - Math.max(pr.top, 0))};
-      overlay(k, to, "0px", col().getPropertyValue("--bg").trim() || "#fff", true);
-    };
-  });
 })();
 // حذف: کارت از کنار می‌رود و کوچک می‌شود، بعد فهرست دوباره ساخته می‌شود
 function fxRemove(el) {
