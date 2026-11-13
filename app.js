@@ -9,6 +9,7 @@ const IC = {
 };
 Object.assign(IC, {
   key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/>',
+  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/>',
   chart: '<path d="M7 20V12M12 20V5M17 20v-9M4 20h16"/>',
   sliders: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
   scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="2.5"/><path d="M7.5 17c.8-2.3 2.4-3.3 4.5-3.3s3.7 1 4.5 3.3"/>',
@@ -263,6 +264,20 @@ function viewCourse(c) {
        (mdReady() ? card("msync", "همگام‌سازی با مودل", c.md?.id ? "این درس به مودل وصل است" : "هنوز وصل نیست", "primary") : ""));
   page.querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go === "msync" ? `#/moodle/sync/${c.id}` : `#/c/${c.id}/${b.dataset.go}`));
 }
+const APP_URL = "https://M.Yaghoubi.github.io/AttendPWA/";
+function showQr() {                                    // کد QR نشانی برنامه (کاملاً آفلاین ساخته می‌شود)
+  const q = qrcode(0, "M"); q.addData(APP_URL); q.make();
+  dlg.innerHTML = `<h2 style="text-align:center">دانلود برنامه</h2>
+    <div class="muted" style="text-align:center">این کد را با دوربین گوشی اسکن کن تا برنامه باز شود.</div>
+    <div id="qrbox" style="background:#fff;border-radius:14px;padding:6px;margin:12px auto;width:min(78vw,280px)">${q.createSvgTag({cellSize: 4, margin: 2, scalable: true})}</div>
+    <div dir="ltr" style="text-align:center;font-size:13px;word-break:break-all;user-select:all">${APP_URL}</div>
+    <div class="row"><button class="btn soft" data-r="0">بستن</button><button class="btn" data-r="1">کپی نشانی</button></div>`;
+  dlg.querySelector("svg").style.cssText = "width:100%;height:auto;display:block";
+  dlg.querySelectorAll("button").forEach(b => b.onclick = async () => {
+    if (b.dataset.r === "1") { try { await navigator.clipboard.writeText(APP_URL); toast("نشانی کپی شد"); } catch (e) { toast(APP_URL); } } else dlg.close();
+  });
+  dlg.oncancel = () => {}; dlg.showModal();
+}
 const relNote = r => (isEn() ? r.en : r.fa) || "";
 function viewAbout() {
   setBar("درباره ما", {back: "#/"});
@@ -272,6 +287,7 @@ function viewAbout() {
     <p class="muted">ایده‌پردازی و طراحی در پژوهشکدهٔ هوش مصنوعی دانشگاه گلستان</p><p class="muted">آبان ۱۴۰۵</p>
     <div id="dev" hidden><div class="vcard" style="text-align:center"><b>درباره توسعه‌دهنده</b><div>مهدی یعقوبی</div><div class="muted">گروه مهندسی کامپیوتر</div><div class="muted">دانشگاه گلستان</div>
       <div class="muted" dir="ltr">mehdi.yaghoubi@gmail.com</div><div class="muted">همکار توسعه: Claude (Anthropic) · دستیار هوش مصنوعی</div></div></div>
+    <button class="btn soft" id="qrb" style="width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px"><span class="mico" style="--ac:var(--primary)">${icon("qr")}</span>دانلود برنامه (کد QR)</button>
     <div class="vcard upd"><b>بروزرسانی برنامه</b>
       <div class="muted">نسخهٔ نصب‌شده: <span dir="ltr">${esc(APP_VERSION)}</span>${cur ? ` · <span dir="ltr">${esc(cur.date)}</span>` : ""}</div>
       ${cur ? `<div class="muted">${esc(relNote(cur))}</div>` : ""}
@@ -279,6 +295,7 @@ function viewAbout() {
       <details><summary>تاریخچهٔ نسخه‌ها</summary>${RELEASES.map(r => `<div class="rel"><b dir="ltr">${esc(r.v)}</b> <span class="muted" dir="ltr">${esc(r.date)}</span>
         <div class="muted">${esc(relNote(r))}</div><div class="fl" dir="ltr">${r.files.map(esc).join(" · ")}</div></div>`).join("")}</details></div></div>`);
   $("#up").onclick = checkUpdate;
+  $("#qrb").onclick = showQr;
   let taps = 0, tt = 0;                                  // ۷ بار لمس لوگو: اطلاعات توسعه‌دهنده
   $("#lg").onclick = () => {
     const now = Date.now(); taps = now - tt > 2500 ? 1 : taps + 1; tt = now;

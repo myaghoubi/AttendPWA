@@ -38,7 +38,7 @@ const EN = {
 "شمارهٔ موبایل توسعه‌دهنده:": "Developer's mobile number:", "ایمیل:": "Email:", "شمارهٔ کارت (از چپ به راست):": "Card number (left to right):", "کپی شمارهٔ کارت": "Copy card number",
 "کد فقط برای همین دستگاه معتبر است. اگر داده‌های مرورگر پاک شود یا برنامه روی دستگاه دیگری نصب شود، شناسه عوض می‌شود و کد تازه لازم است. پشتیبان‌گیری کد فعال‌سازی را جابه‌جا نمی‌کند.": "The code is valid for this device only. If the browser data is cleared or the app is installed on another device, the ID changes and a new code is needed. Backups do not carry the activation code.",
 "شناسه کپی شد": "ID copied", "شمارهٔ کارت کپی شد": "Card number copied", "برنامه فعال شد": "App activated", "کد برای این دستگاه معتبر نیست": "This code is not valid for this device",
-"آماده؛ ثبت کن": "Ready; capture", "میلی‌ثانیه": "ms",
+"دانلود برنامه (کد QR)": "Download app (QR code)", "دانلود برنامه": "Download app", "این کد را با دوربین گوشی اسکن کن تا برنامه باز شود.": "Scan this code with the phone camera to open the app.", "کپی نشانی": "Copy address", "نشانی کپی شد": "Address copied", "آماده؛ ثبت کن": "Ready; capture", "میلی‌ثانیه": "ms",
 "در حال تشخیص…": "Detecting…", "در عکس بیش از یک چهره است؛ عکسی با یک نفر انتخاب کن": "The photo has more than one face; choose a photo with one person", "چهره‌ای در عکس پیدا نشد": "No face found in the photo",
 "آزمایشی": "Trial", "نفر نمونهٔ چهره دارند.": "have face samples.", "اول از «تعریف افراد» نمونه ثبت کن.": "First add samples in “People”.",
 "آستانه (کمتر = سخت‌گیرتر)": "Threshold (lower = stricter)", "ثبت جلسه در سوابق": "Save session to records", "نام ← کمترین فاصله": "Name ← smallest distance",
