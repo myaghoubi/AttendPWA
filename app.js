@@ -264,7 +264,7 @@ function viewCourse(c) {
        (mdReady() ? card("msync", "همگام‌سازی با مودل", c.md?.id ? "این درس به مودل وصل است" : "هنوز وصل نیست", "primary") : ""));
   page.querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go === "msync" ? `#/moodle/sync/${c.id}` : `#/c/${c.id}/${b.dataset.go}`));
 }
-const APP_URL = "https://M.Yaghoubi.github.io/AttendPWA/";
+const APP_URL = "https://myaghoubi.github.io/AttendPWA/";
 function showQr() {                                    // کد QR نشانی برنامه (کاملاً آفلاین ساخته می‌شود)
   const q = qrcode(0, "M"); q.addData(APP_URL); q.make();
   dlg.innerHTML = `<h2 style="text-align:center">دانلود برنامه</h2>
