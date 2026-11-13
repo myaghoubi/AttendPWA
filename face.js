@@ -17,6 +17,23 @@ const Face = {
   async detect(src, accurate) {
     return faceapi.detectAllFaces(src, accurate && VP("photo_accurate") ? this.ssd() : this.tiny()).withFaceLandmarks().withFaceDescriptors();
   },
+  async detectRegion(img, tx, ty, boxes) {                 // پردازش مجدد اطراف یک نقطه (برای چهره‌های جاافتاده)
+    const W = img.width, H = img.height, side = Math.min(Math.min(W, H), Math.max(160, Math.max(W, H) * 0.38));
+    const sx = Math.min(Math.max(tx - side / 2, 0), W - side), sy = Math.min(Math.max(ty - side / 2, 0), H - side), Z = 512;
+    const cv = document.createElement("canvas"); cv.width = cv.height = Z;
+    cv.getContext("2d").drawImage(img, sx, sy, side, side, 0, 0, Z, Z);
+    const sc = Math.max(.15, VP("det_score") - .25);
+    let r = await faceapi.detectAllFaces(cv, new faceapi.SsdMobilenetv1Options({minConfidence: sc})).withFaceLandmarks().withFaceDescriptors();
+    if (!r.length) r = await faceapi.detectAllFaces(cv, new faceapi.TinyFaceDetectorOptions({inputSize: 608, scoreThreshold: sc})).withFaceLandmarks().withFaceDescriptors();
+    const k = side / Z, out = [];
+    for (const d of r) {
+      const b = d.detection.box, box = {x: sx + b.x * k, y: sy + b.y * k, width: b.width * k, height: b.height * k};
+      const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+      if (boxes.some(o => cx > o.x && cx < o.x + o.width && cy > o.y && cy < o.y + o.height)) continue;     // قبلاً کادر دارد
+      out.push({detection: {box, score: d.detection.score}, descriptor: d.descriptor, _d: Math.hypot(cx - tx, cy - ty)});
+    }
+    return out.sort((a, b) => a._d - b._d);
+  },
   gallery(c) {
     const g = [];
     for (const n of c.people) for (const s of (c.faces?.[n] || [])) g.push({name: n, d: new Float32Array(s.d)});
@@ -136,6 +153,29 @@ async function viewEnroll(c, idx) {
   run();
 }
 
+/* ---------- لمس روی عکس پردازش‌شده (مشترک بین «حضور و غیاب» و «تعریف افراد») ----------
+   لمس کادر = ثبت نام / تغییر فرد؛ لمس جای دیگر = پردازش مجدد اطراف همان نقطه برای پیدا کردن چهرهٔ جاافتاده */
+function bindPhotoTap(pc, c, h) {
+  let busy = false;
+  pc.onclick = async e => {
+    const img = h.img(); if (!img || busy) return;
+    const rc = pc.getBoundingClientRect(), x = (e.clientX - rc.left) * pc.width / rc.width, y = (e.clientY - rc.top) * pc.height / rc.height;
+    const hit = h.faces().filter(f => x >= f.box.x && x <= f.box.x + f.box.width && y >= f.box.y && y <= f.box.y + f.box.height).sort((p, q) => p.box.width - q.box.width)[0];
+    if (hit) {
+      const th = thumbOf(img, hit.box), v = await pickName(c, {s: [{t: th}]});
+      if (!v || v === hit.name) return;
+      return h.assign(hit, v, th);
+    }
+    busy = true; h.msg("در حال جست‌وجوی چهره در این ناحیه…");
+    try {
+      const r = await Face.detectRegion(img, x, y, h.faces().map(f => f.box));
+      r.forEach(d => h.absorb(d)); h.redraw();
+      h.msg(r.length ? `${fa(r.length)} چهرهٔ تازه در این ناحیه پیدا شد؛ روی کادر بزن.` : "چهره‌ای در این ناحیه پیدا نشد");
+    } catch (er) { h.msg("پردازش این ناحیه ناموفق بود"); }
+    busy = false;
+  };
+}
+
 /* ---------- حضور و غیاب (آزمایشی: بدون ذخیره در سوابق) ---------- */
 async function viewAttend(c) {
   c.faces = c.faces || {};
@@ -189,7 +229,7 @@ async function viewAttend(c) {
     run();
   }
   function photoMode() {
-    Face.stopCam(); modeEl.innerHTML = `<div class="row"><button class="btn" id="pk" style="flex:1">انتخاب یا گرفتن عکس کلاس</button></div><input type="file" id="fi" accept="image/*" hidden><div class="photo"><canvas id="pc"></canvas></div><div class="muted" id="st"></div><div class="muted" id="hint" hidden>روی کادر زرد بزن تا ثبت نام شود؛ روی کادر سبز بزن تا چهره به فرد دیگری نسبت داده شود.</div>`;
+    Face.stopCam(); modeEl.innerHTML = `<div class="row"><button class="btn" id="pk" style="flex:1">انتخاب یا گرفتن عکس کلاس</button></div><input type="file" id="fi" accept="image/*" hidden><div class="photo"><canvas id="pc"></canvas></div><div class="muted" id="st"></div><div class="muted" id="hint" hidden>روی کادر زرد بزن تا ثبت نام شود؛ روی کادر سبز بزن تا چهره به فرد دیگری نسبت داده شود؛ روی چهرهٔ بدون کادر بزن تا همان اطراف دوباره پردازش شود.</div>`;
     const srcOf = new Map(); let faces = [], curImg = null;      // نام ← مجموعهٔ چهره‌هایی که او را «حاضر» کرده‌اند
     const mark = (n, f) => { (srcOf.get(n) || srcOf.set(n, new Set()).get(n)).add(f); if (!found.has(n) || found.get(n) > f.dist) found.set(n, f.dist); };
     const redraw = () => {
@@ -198,13 +238,7 @@ async function viewAttend(c) {
       drawBoxes(sc, curImg.width, curImg.height, faces.map(f => ({box: f.box, label: f.name || "؟", ok: !!f.name}))); pc.getContext("2d").drawImage(sc, 0, 0);
     };
     $("#pk").onclick = () => $("#fi").click();
-    $("#pc").onclick = async e => {                                // لمس کادر: ثبت نام موردی (زرد) یا تغییر فرد (سبز)
-      if (!curImg) return;
-      const pc = $("#pc"), rc = pc.getBoundingClientRect(), x = (e.clientX - rc.left) * pc.width / rc.width, y = (e.clientY - rc.top) * pc.height / rc.height;
-      const hit = faces.filter(f => x >= f.box.x && x <= f.box.x + f.box.width && y >= f.box.y && y <= f.box.y + f.box.height).sort((p, q) => p.box.width - q.box.width)[0];
-      if (!hit) return;
-      const th = thumbOf(curImg, hit.box), v = await pickName(c, {s: [{t: th}]});
-      if (!v || v === hit.name) return;
+    const assign = async (hit, v, th) => {
       if (!c.people.includes(v)) c.people.push(v);
       const l = (c.faces[v] = c.faces[v] || []);
       if (l.length < VP("max_faces")) l.push({d: Array.from(hit.d), t: th}); else toast("حداکثر نمونه ثبت شده؛ چهره فقط به همین عکس نسبت داده شد");
@@ -212,6 +246,8 @@ async function viewAttend(c) {
       hit.name = v; hit.dist = 0; mark(v, hit);
       gal = Face.gallery(c); save(); redraw(); summary(); toast(`«${v}» ثبت شد`);
     };
+    bindPhotoTap($("#pc"), c, {img: () => curImg, faces: () => faces, assign, redraw, msg: s => $("#st").textContent = s,
+      absorb: d => { const m = Face.match(d.descriptor, gal, thr), f = {box: d.detection.box, d: d.descriptor, name: m.name, dist: m.dist}; faces.push(f); if (m.name) mark(m.name, f); summary(); return f; }});
     $("#fi").onchange = async e => {
       const f = e.target.files[0]; if (!f) return; e.target.value = ""; const st = $("#st");
       try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(t => st.textContent = t); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
@@ -250,38 +286,64 @@ function scanPanel(c, host, mode, onChange) {
     return {best, bd};
   };
   // یک چهره را پردازش می‌کند؛ برچسب برمی‌گرداند
-  const handle = (det, src) => {
+  const handle = (det, src, force) => {
     const d = Array.from(det.descriptor), box = det.detection.box;
-    if (det.detection.score < Math.min(.95, VP("det_score") + .1) || box.width < VP("min_face")) return {label: "…", ok: false};
+    if (!force && (det.detection.score < Math.min(.95, VP("det_score") + .1) || box.width < VP("min_face"))) return {label: "…", ok: false, kind: "?"};
     const {best, bd} = identify(det.descriptor), sample = () => ({d, t: thumbOf(src, box)});
     if (best && bd <= SCAN.thr) {
       if (best.kind === "p") {
         stat.known.add(best.n);
         const l = c.faces[best.n] || (c.faces[best.n] = []);
-        if (bd <= SCAN.addBelow && l.length < SCAN.max && minDist(det.descriptor, l) > SCAN.dup) { l.push(sample()); stat.added++; save(); onChange(); }
-        return {label: best.n, ok: true};
+        let smp = null;
+        if (bd <= SCAN.addBelow && l.length < SCAN.max && minDist(det.descriptor, l) > SCAN.dup) { smp = sample(); l.push(smp); stat.added++; save(); onChange(); }
+        return {label: best.n, ok: true, kind: "p", name: best.n, smp};
       }
       const l = best.u.s;
-      if (l.length < SCAN.max && minDist(det.descriptor, l) > SCAN.dup) { l.push(sample()); save(); onChange(); }
-      return {label: "بدون نام " + fa(c.unknown.indexOf(best.u) + 1), ok: false};
+      let smp = null;
+      if (l.length < SCAN.max && minDist(det.descriptor, l) > SCAN.dup) { smp = sample(); l.push(smp); save(); onChange(); }
+      return {label: "بدون نام " + fa(c.unknown.indexOf(best.u) + 1), ok: false, kind: "u", u: best.u, smp};
     }
-    if (best && bd <= SCAN.thr + VP("unk_margin")) return {label: "؟", ok: false};     // مبهم: نه اضافه کن نه ناشناس تازه بساز
+    if (best && bd <= SCAN.thr + VP("unk_margin")) return {label: "؟", ok: false, kind: "?"};     // مبهم: نه اضافه کن نه ناشناس تازه بساز
     const u = {id: uid(), s: [sample()]}; c.unknown.push(u); stat.fresh++; save(); onChange();
-    return {label: "بدون نام " + fa(c.unknown.length), ok: false};
+    return {label: "بدون نام " + fa(c.unknown.length), ok: false, kind: "u", u, smp: u.s[0]};
   };
   const report = extra => st.textContent = `${fa(stat.known.size)} نفر شناخته‌شده · ${fa(stat.added)} نمونهٔ تازه · ${fa(stat.fresh)} ناشناس جدید${extra ? " · " + extra : ""}`;
   if (mode === "photo") {
+    const hint = document.createElement("div"); hint.className = "muted"; hint.hidden = true;
+    hint.textContent = "روی کادر زرد بزن تا ثبت نام شود؛ روی کادر سبز بزن تا چهره به فرد دیگری نسبت داده شود؛ روی چهرهٔ بدون کادر بزن تا همان اطراف دوباره پردازش شود.";
+    host.appendChild(hint);
+    let faces = [], curImg = null;
+    const pc = host.querySelector("#pc");
+    const redraw = () => {
+      pc.width = curImg.width; pc.height = curImg.height; pc.getContext("2d").drawImage(curImg, 0, 0);
+      const sc = document.createElement("canvas"); drawBoxes(sc, curImg.width, curImg.height, faces.map(f => ({box: f.box, label: f.label, ok: f.ok}))); pc.getContext("2d").drawImage(sc, 0, 0);
+    };
+    const absorb = (x, force) => { const h = handle(x, curImg, force); const f = {box: x.detection.box, d: x.descriptor, ...h}; faces.push(f); return f; };
+    const assign = async (hit, v, th) => {
+      if (!c.people.includes(v)) c.people.push(v);
+      const l = (c.faces[v] = c.faces[v] || []), room = () => l.length < SCAN.max;
+      if (hit.kind === "p" && hit.smp) { const o = c.faces[hit.name] || [], i = o.indexOf(hit.smp); if (i >= 0) o.splice(i, 1); }
+      let smp = null;
+      if (hit.kind === "u" && hit.u) {                       // کل خوشهٔ ناشناس به همین فرد می‌پیوندد
+        const u = hit.u; c.unknown = c.unknown.filter(x => x !== u);
+        for (const s of u.s) if (room()) l.push(s);
+        smp = hit.smp; faces.forEach(f => { if (f.u === u) { Object.assign(f, {kind: "p", name: v, label: v, ok: true, u: null}); } });
+      } else {
+        smp = hit.smp || {d: Array.from(hit.d), t: th}; if (room()) l.push(smp);
+      }
+      Object.assign(hit, {kind: "p", name: v, label: v, ok: true, u: null, smp});
+      save(); onChange(); redraw(); toast(`«${v}» ثبت شد`);
+    };
+    bindPhotoTap(pc, c, {img: () => curImg, faces: () => faces, assign, redraw, msg: s => st.textContent = s, absorb: d => { const f = absorb(d, true); onChange(); return f; }});
     host.querySelector("#pk").onclick = () => host.querySelector("#fi").click();
     host.querySelector("#fi").onchange = async e => {
       const f = e.target.files[0]; if (!f) return; e.target.value = "";
       try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(t => st.textContent = t); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
       st.textContent = "در حال تشخیص…"; const t0 = performance.now();
       const img = await loadImg(f), r = await Face.detect(img, true);
-      const items = r.map(x => { const h = handle(x, img); return {box: x.detection.box, label: h.label, ok: h.ok}; });
-      const pc = host.querySelector("#pc"); pc.width = img.width; pc.height = img.height;
-      pc.getContext("2d").drawImage(img, 0, 0); const sc = document.createElement("canvas");
-      drawBoxes(sc, img.width, img.height, items); pc.getContext("2d").drawImage(sc, 0, 0);
-      report(`${fa(r.length)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`);
+      curImg = img; faces = []; r.forEach(x => absorb(x, false));
+      redraw(); report(`${fa(r.length)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`);
+      hint.hidden = false;
     };
     return;
   }

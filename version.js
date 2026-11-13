@@ -1,6 +1,18 @@
 // خودکار ساخته می‌شود (pwa_release.py). RELEASES: فهرست فایل‌های تغییرکرده در هر نسخه، جدیدترین اول.
-const APP_VERSION = "1.7.6";
+const APP_VERSION = "1.7.7";
 const RELEASES = [
+ {
+  "v": "1.7.7",
+  "date": "2026-11-13",
+  "fa": "لمس کادر زرد/سبز در «تعریف افراد» هم؛ لمس بیرون از کادرها = پردازش مجدد اطراف نقطه برای پیدا کردن چهرهٔ جاافتاده (در هر دو صفحه)",
+  "en": "Tap yellow/green boxes on the People page too; tapping outside boxes re-processes the area to find missed faces (both pages)",
+  "files": [
+   "face.js",
+   "i18n.js",
+   "sw.js",
+   "version.js"
+  ]
+ },
  {
   "v": "1.7.6",
   "date": "2026-11-13",
