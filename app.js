@@ -67,6 +67,29 @@ function ask({title, text, input, ok = "تأیید", danger = false}) {
   });
 }
 
+function pickName(c) {                       // نام جدید بنویس یا از افراد تعریف‌شده انتخاب کن
+  return new Promise(res => {
+    const ppl = c.people;
+    dlg.innerHTML = `<h2>نام فرد</h2><div class="muted">نام تازه بنویس یا یکی از افراد تعریف‌شده را بزن؛ نمونه‌ها به همان فرد اضافه می‌شود.</div>
+      <input type="text" id="dv" placeholder="نام جدید…" autocomplete="off" style="width:100%;margin-top:12px;box-shadow:none;background:var(--card2)">
+      <div id="pk" style="display:flex;flex-direction:column;gap:6px;max-height:40vh;overflow:auto;margin-top:10px"></div>
+      <div class="row"><button class="btn soft" data-r="0">انصراف</button><button class="btn" data-r="1">ثبت</button></div>`;
+    const done = v => { dlg.close(); res(v); };
+    const inp = $("#dv"), pk = $("#pk");
+    const draw = () => {
+      const q = inp.value.trim(), l = ppl.filter(n => !q || n.includes(q));
+      pk.innerHTML = l.length ? l.map(n => `<button class="btn soft" data-n="${esc(n)}" style="justify-content:flex-start;text-align:start;padding:9px 12px">${esc(n)}</button>`).join("")
+        : (ppl.length ? `<div class="muted">نام تازه ثبت می‌شود</div>` : "");
+      pk.querySelectorAll("[data-n]").forEach(b => b.onclick = () => done(b.dataset.n));
+    };
+    inp.oninput = draw; draw();
+    dlg.querySelectorAll("[data-r]").forEach(b => b.onclick = () => done(b.dataset.r === "1" ? inp.value.trim() : null));
+    inp.onkeydown = e => { if (e.key === "Enter") done(inp.value.trim()); };
+    dlg.oncancel = () => res(null);
+    dlg.showModal();
+  });
+}
+
 /* ---------- مسیریابی ---------- */
 const go = h => { location.hash = h; };
 function setBar(title, {back, sub, right = "", acc} = {}) {
@@ -246,7 +269,7 @@ function viewPeople(c) {
     $("#unk").querySelectorAll("[data-u]").forEach(b => b.onclick = async () => {
       const i = c.unknown.findIndex(x => x.id === b.dataset.u), x = c.unknown[i]; if (!x) return;
       if (b.dataset.a === "rm") { c.unknown.splice(i, 1); trashAdd("unknown", "ناشناس", {cid: c.id, i, u: x}); return drawUnk(); }
-      const v = await ask({title: "نام فرد", text: "اگر این نام قبلاً در فهرست باشد، نمونه‌ها به همان فرد اضافه می‌شود.", input: "", ok: "ثبت"});
+      const v = await pickName(c);
       if (!v) return;
       const j = c.unknown.findIndex(y => y.id === x.id); if (j < 0) return;
       c.unknown.splice(j, 1); c.faces = c.faces || {};

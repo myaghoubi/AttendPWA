@@ -64,10 +64,11 @@ function drawBoxes(cv, vw, vh, items) {               // items: [{box,label,ok}]
   for (const it of items) {
     const b = it.box, col = it.ok === false ? "#f59e0b" : "#22c55e";
     g.strokeStyle = col; g.strokeRect(b.x, b.y, b.width, b.height);
-    if (it.label) {
-      const w = g.measureText(it.label).width + 10, h = fs + 8;
+    if (it.ok === true && it.label) {            // فقط بالای کادر سبز: نام با فونت ریز
+      const f2 = Math.max(9, vw / 70); g.font = `${f2}px IRANSans, sans-serif`;
+      const w = g.measureText(it.label).width + 6, h = f2 + 4;
       g.fillStyle = col; g.fillRect(b.x - lw / 2, b.y - h, w, h);
-      g.fillStyle = "#0b1220"; g.fillText(it.label, b.x + 5, b.y - h + 4);
+      g.fillStyle = "#0b1220"; g.fillText(it.label, b.x + 3, b.y - h + 2);
     }
   }
 }
