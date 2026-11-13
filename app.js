@@ -10,7 +10,7 @@ const IC = {
 const icon = n => `<svg viewBox="0 0 24 24">${IC[n]}</svg>`;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const fa = n => String(n).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+const fa = n => isEn() ? String(n) : String(n).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
 
 /* ---------- ذخیره‌سازی: IndexedDB (در صورت نبود: localStorage) ---------- */
 const Store = {
@@ -104,7 +104,7 @@ function show(html) { page.innerHTML = html; page.classList.remove("page-in"); v
 const course = id => S.courses.find(c => c.id === id);
 
 function route() {
-  closeMenu();
+  closeMenu(); renderDock();
   Face.stopCam();                                        // دوربین فقط در صفحهٔ خودش روشن است
   const p = location.hash.replace(/^#\/?/, "").split("/");
   if (p[0] === "c" && course(p[1])) {
@@ -131,6 +131,7 @@ function trashPurge() {
 }
 function trashAdd(kind, label, data) {
   const e = {id: uid(), kind, label, data, t: Date.now()}; (S.trash = S.trash || []).push(e); trashPurge(); save();
+  renderDock();
   if (S.trash.includes(e)) toast(`«${label}» حذف شد`, () => trashRestore(e.id)); else toast(`«${label}» حذف شد`);
 }
 function trashRestore(id) {
@@ -149,15 +150,16 @@ function trashRestore(id) {
   }
   S.trash = S.trash.filter(x => x !== e); save(); closeMenu(); toast("بازیابی شد"); route();
 }
-function openMenu() {
+function menuHtml() {
   trashPurge();
   const dr = $("#drawer"), left = S.trash.slice().reverse(), md = mdc();
   const ring = e => { const rem = Math.max(0, HOLD - (Date.now() - e.t)), m = Math.ceil(rem / 60000);
     return `<span class="ring" style="--p:${Math.round(rem / HOLD * 360)}deg"><i>${fa(m)}</i></span>`; };
-  const item = (h, t, s = "") => `<button class="mi" data-h="${h}"><span class="mt">${t}${s ? `<small>${s}</small>` : ""}</span></button>`;
+  const item = (h, t, s = "") => `<button class="mi${cur(h)}" data-h="${h}"><span class="mt">${t}${s ? `<small>${s}</small>` : ""}</span></button>`;
   const u = md.on && md.user;
   const who = u ? `<div class="mu"><b>${esc(u.fullname || "")}</b><small>${esc(u.username || "")}</small><small>${esc(u.sitename || "")}</small><small dir="ltr">${esc(u.siteurl || md.url || "")}</small></div>`
     : `<div class="mu off"><small>مودل آفلاین</small></div>`;
+  const cur = h => (location.hash || "#/") === h ? " cur" : "";
   dr.innerHTML = `<div class="scrim"></div><nav>
     <div class="nh">حضور و غیاب</div>${who}<div class="hr"></div>
     ${item("#/settings", "تنظیمات برنامه")}${item("#/vision", "شناسایی چهره")}${item("#/moodle", "تنظیمات اتصال به مودل")}
@@ -165,11 +167,15 @@ function openMenu() {
     ${left.length ? `<div class="section">بازیابی</div>` + left.map(e => `<button class="mi" data-r="${e.id}"><span class="mt">برگردان ${KIND[e.kind]}<small>${esc(e.label)}</small></span>${ring(e)}</button>`).join("") : ""}
     <div class="hr"></div>${item("#/about", "درباره ما")}
     </nav>`;
-  dr.classList.add("open");
   dr.querySelector(".scrim").onclick = closeMenu;
   dr.querySelectorAll("[data-h]").forEach(b => b.onclick = () => { closeMenu(); go(b.dataset.h); });
   dr.querySelectorAll("[data-r]").forEach(b => b.onclick = () => trashRestore(b.dataset.r));
 }
+const isLand = () => matchMedia("(orientation:landscape)").matches;
+function openMenu() { menuHtml(); $("#drawer").classList.add("open"); }
+function renderDock() { if (isLand()) menuHtml(); }          // حالت افقی: منو همیشه سمت راست قفل است
+matchMedia("(orientation:landscape)").addEventListener?.("change", () => { closeMenu(); if (isLand()) menuHtml(); });
+setInterval(() => { if (isLand() && !document.hidden) menuHtml(); }, 30000);
 function closeMenu() { $("#drawer").classList.remove("open"); }
 
 /* ---------- دروس ---------- */
@@ -228,13 +234,56 @@ function viewCourse(c) {
        (mdReady() ? card("msync", "همگام‌سازی با مودل", c.md?.id ? "این درس به مودل وصل است" : "هنوز وصل نیست", "primary") : ""));
   page.querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go === "msync" ? `#/moodle/sync/${c.id}` : `#/c/${c.id}/${b.dataset.go}`));
 }
+const relNote = r => (isEn() ? r.en : r.fa) || "";
 function viewAbout() {
   setBar("درباره ما", {back: "#/"});
+  const cur = RELEASES[0];
   show(`<div class="about"><img src="icons/icon-192.png" alt="" width="96" height="96">
     <h2>سامانه حضور و غیاب تصویری</h2>
     <p class="muted">ایده‌پردازی و طراحی در پژوهشکدهٔ هوش مصنوعی دانشگاه گلستان</p><p class="muted">آبان ۱۴۰۵</p>
     <div class="vcard" style="text-align:center"><b>درباره توسعه‌دهنده</b><div>مهدی یعقوبی</div><div class="muted">گروه مهندسی کامپیوتر</div><div class="muted">دانشگاه گلستان</div>
-      <div class="muted" dir="ltr">mehdi.yaghoubi@gmail.com</div><div class="muted">همکار توسعه: Claude (Anthropic) · دستیار هوش مصنوعی</div></div></div>`);
+      <div class="muted" dir="ltr">mehdi.yaghoubi@gmail.com</div><div class="muted">همکار توسعه: Claude (Anthropic) · دستیار هوش مصنوعی</div></div>
+    <div class="vcard upd"><b>بروزرسانی برنامه</b>
+      <div class="muted">نسخهٔ نصب‌شده: <span dir="ltr">${esc(APP_VERSION)}</span>${cur ? ` · <span dir="ltr">${esc(cur.date)}</span>` : ""}</div>
+      ${cur ? `<div class="muted">${esc(relNote(cur))}</div>` : ""}
+      <button class="btn" id="up">بررسی بروزرسانی</button><div id="us" class="muted"></div>
+      <details><summary>تاریخچهٔ نسخه‌ها</summary>${RELEASES.map(r => `<div class="rel"><b dir="ltr">${esc(r.v)}</b> <span class="muted" dir="ltr">${esc(r.date)}</span>
+        <div class="muted">${esc(relNote(r))}</div><div class="fl" dir="ltr">${r.files.map(esc).join(" · ")}</div></div>`).join("")}</details></div></div>`);
+  $("#up").onclick = checkUpdate;
+}
+async function checkUpdate() {
+  const us = $("#us"), up = $("#up"); us.textContent = "در حال بررسی…"; up.disabled = true;
+  let R;
+  try {
+    const t = await (await fetch("version.js?t=" + Date.now(), {cache: "no-store"})).text();
+    R = new Function(t + ";return {v: APP_VERSION, rel: RELEASES, all: APP_FILES};")();
+  } catch (e) { us.textContent = "آفلاین یا سرور در دسترس نیست"; up.disabled = false; return; }
+  up.disabled = false;
+  if (R.v === APP_VERSION) { us.textContent = "نسخهٔ شما به‌روز است"; return; }
+  const i = R.rel.findIndex(r => r.v === APP_VERSION);
+  const files = [...new Set(i >= 0 ? R.rel.slice(0, i).flatMap(r => r.files) : R.all)];
+  us.innerHTML = `<b>نسخهٔ جدید موجود است: <span dir="ltr">${esc(R.v)}</span></b><div>${esc(relNote(R.rel[0]))}</div>
+    <div>فایل‌های تغییر کرده (${fa(files.length)}):</div><div class="fl" dir="ltr">${files.map(esc).join(" · ")}</div>
+    <button class="btn" id="go2" style="margin-top:8px">دانلود و نصب</button><div id="pg"></div>`;
+  $("#go2").onclick = async () => {
+    $("#go2").disabled = true; const pg = $("#pg"), got = [];
+    try {
+      for (const f of files) {
+        if (f === "sw.js") continue;
+        pg.textContent = `در حال دانلود ${fa(got.length + 1)}/${fa(files.length)}: ${f}`;
+        const r = await fetch(f + "?v=" + encodeURIComponent(R.v), {cache: "reload"});
+        if (!r.ok) throw new Error(f + " (" + r.status + ")");
+        got.push([f, r.headers.get("content-type") || "", await r.blob()]);
+      }
+      const c = await caches.open("attendance-files");
+      for (const [f, ct, b] of got) {                      // همه با هم نوشته می‌شوند تا نسخهٔ ناقص ایجاد نشود
+        const mk = () => new Response(b, {headers: {"content-type": ct}});
+        await c.put(new Request(f), mk()); if (f === "index.html") await c.put(new Request("./"), mk());
+      }
+      (await navigator.serviceWorker?.getRegistration())?.update();
+      pg.textContent = "بروزرسانی انجام شد؛ برنامه دوباره باز می‌شود…"; setTimeout(() => location.reload(), 900);
+    } catch (e) { pg.textContent = "بروزرسانی ناموفق بود (اینترنت؟): " + e.message; $("#go2").disabled = false; }
+  };
 }
 function viewSoon(c, k) {
   setBar(k === "attend" ? "حضور و غیاب" : "سوابق حضور", {back: "#/c/" + c.id, sub: c.name, acc: c.acc});
@@ -315,7 +364,7 @@ function viewPeople(c) {
   await Store.open();
   const d = await Store.get("state");
   if (d && Array.isArray(d.courses)) S = {v: 1, ...d};
-  normSettings(); applyTheme();
+  normSettings(); applyTheme(); applyLang();
   navigator.storage?.persist?.();                       // جلوگیری از پاک شدن خودکار داده‌ها
   addEventListener("hashchange", route);
   route();

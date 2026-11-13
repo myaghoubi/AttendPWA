@@ -5,8 +5,9 @@ const MARK = {P: "ح", L: "ت", E: "م", A: ""};
 const fmts = {};
 const sLabel = s => {
   const cal = S.settings?.cal === "gregorian" ? "gregory" : "persian";
-  const d = fmts[cal] ||= new Intl.DateTimeFormat("fa-IR-u-ca-" + cal, {month: "2-digit", day: "2-digit"});
-  const t = fmts.t ||= new Intl.DateTimeFormat("fa-IR", {hour: "2-digit", minute: "2-digit", hour12: false});
+  const lc = isEn() ? "en-US" : "fa-IR";
+  const d = fmts[lc + cal] ||= new Intl.DateTimeFormat(lc + "-u-ca-" + cal, {month: "2-digit", day: "2-digit"});
+  const t = fmts[lc] ||= new Intl.DateTimeFormat(lc, {hour: "2-digit", minute: "2-digit", hour12: false});
   return `${d.format(s.t)} ${t.format(s.t)}`;
 };
 /* فعالیت (ستاره/سکه) و تنبیه (رعدوبرق/ضربدر): هر ۵ ستاره = ۱ سکه، حداکثر ۳ سکه */

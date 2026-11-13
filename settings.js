@@ -1,10 +1,11 @@
 "use strict";
 /* تنظیمات برنامه: تم‌ها، ظاهر، حالت افقی، پارامترهای شناسایی چهره، پشتیبان‌گیری */
-const DEFAULTS = {theme: "system", cal: "jalali", limit: 6, landCols: 2, undoK: 1, nameW: 140, vp: {},
+const DEFAULTS = {theme: "system", lang: "fa", cal: "jalali", limit: 6, landCols: 2, undoK: 1, nameW: 140, vp: {},
   md: {on: false, url: "", token: "", service: "moodle_mobile_app", proxy: "", user: null}};
 function normSettings() {
   const old = S.settings || {};
   S.settings = Object.assign({}, DEFAULTS, old, {vp: Object.assign({}, old.vp), md: Object.assign({}, DEFAULTS.md, old.md)});
+  S.settings.lang = S.settings.lang === "en" ? "en" : "fa";
   if (!["system", "dark", "black", "light"].includes(S.settings.theme)) S.settings.theme = "system";
   document.documentElement.style.setProperty("--lc", S.settings.landCols);
 }
@@ -63,11 +64,11 @@ function vpSet(k, v) {
   if (u === "bool") v = !!v; else { v = Math.min(hi, Math.max(lo, +v)); v = Math.round(Math.round(v / st) * st * 1e6) / 1e6; }
   S.settings.vp[k] = v; save(); return v;
 }
-const fmtNum = (x, d = 2) => fa(Number(x).toFixed(d)).replace(".", "٫");
+const fmtNum = (x, d = 2) => fa(Number(x).toFixed(d)).replace(".", isEn() ? "." : "٫");
 function vpText(v, k) {
   const [d, , , st, u] = VSPEC[k];
   if (u === "bool") return "";
-  if (u === "%") return fa(Math.round(v * 100)) + "٪";
+  if (u === "%") return fa(Math.round(v * 100)) + (isEn() ? "%" : "٪");
   if (u === "px") return fa(Math.round(v)) + " px";
   if (u === "ms") return fa(Math.round(v)) + " ms";
   if (u === "x") return fmtNum(v, 1) + " ×";
@@ -105,6 +106,7 @@ function viewSettings() {
   const redo = () => { save(); const y = scrollY; viewSettings(); scrollTo(0, y); };
   root.appendChild(sec("ظاهر", chipsEl([["dark", "تیره"], ["black", "سیاه"], ["light", "روشن"], ["system", "سیستم"]], s.theme,
     k => { s.theme = k; applyTheme(); redo(); })));
+  root.appendChild(sec("زبان", chipsEl([["fa", "فارسی"], ["en", "English"]], s.lang, k => { s.lang = k; save(); applyLang(); route(); })));
   root.appendChild(sec("تقویم", chipsEl([["jalali", "شمسی"], ["gregorian", "میلادی"]], s.cal, k => { s.cal = k; redo(); })));
   root.appendChild(sec("حد مجاز غیبت (بعد از آن ردیف قرمز می‌شود)", sliderRow(s.limit, 3, 8, 1, null, v => { s.limit = v; save(); })));
   root.appendChild(sec("تعداد ستون اجزای صفحه در حالت افقی", sliderRow(s.landCols, 1, 4, 1,
@@ -138,7 +140,7 @@ function viewSettings() {
       const d = JSON.parse(await f.text());
       if (!Array.isArray(d.courses)) throw 0;
       if (!await ask({title: "بازیابی", text: "همهٔ اطلاعات فعلی (تنظیمات، دروس، افراد، سوابق) با این پشتیبان جایگزین می‌شود.", ok: "جایگزین کن", danger: true})) return;
-      S = {v: 1, ...d}; normSettings(); save(); applyTheme(); toast("بازیابی شد"); go("#/");
+      S = {v: 1, ...d}; normSettings(); save(); applyTheme(); applyLang(); toast("بازیابی شد"); go("#/");
     } catch (_) { toast("فایل پشتیبان معتبر نیست"); }
   };
   if (deferredInstall) $("#inst").onclick = async () => { deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; viewSettings(); };
