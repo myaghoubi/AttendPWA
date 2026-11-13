@@ -251,6 +251,7 @@ async function renameCourse(c) {
 async function delCourse(c) {
   if (!await ask({title: "حذف درس", text: `درس «${c.name}» با همهٔ افرادش حذف شود؟`, ok: "حذف", danger: true})) return;
   const i = S.courses.indexOf(c);
+  await fxRemove(page.querySelector(`.card[data-id="${c.id}"]`));
   S.courses.splice(i, 1); trashAdd("course", c.name, {c, i}); route();
 }
 
