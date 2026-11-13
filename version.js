@@ -1,6 +1,17 @@
 // خودکار ساخته می‌شود (pwa_release.py). RELEASES: فهرست فایل‌های تغییرکرده در هر نسخه، جدیدترین اول.
-const APP_VERSION = "1.7.4";
+const APP_VERSION = "1.7.5";
 const RELEASES = [
+ {
+  "v": "1.7.5",
+  "date": "2026-11-13",
+  "fa": "حالت افقی: منو در فارسی سمت راست و در انگلیسی سمت چپ",
+  "en": "Landscape: menu docked on the right in Persian and on the left in English",
+  "files": [
+   "style.css",
+   "sw.js",
+   "version.js"
+  ]
+ },
  {
   "v": "1.7.4",
   "date": "2026-11-13",

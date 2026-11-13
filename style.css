@@ -214,3 +214,11 @@ dialog input[type=text]{width:100%}
   #page{padding-right:14px!important}
   #toast{left:calc(50% - var(--dw)/2)}
 }
+/* حالت افقی انگلیسی: منو سمت چپ */
+@media (orientation:landscape){
+  [dir=ltr] body{padding-right:0;padding-left:calc(var(--dw) + env(safe-area-inset-left))}
+  [dir=ltr] #drawer{right:auto;left:0;width:calc(var(--dw) + env(safe-area-inset-left))}
+  [dir=ltr] #drawer nav{border-left:0;border-right:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 8px) 10px 14px calc(env(safe-area-inset-left) + 10px)}
+  [dir=ltr] #page{padding-right:calc(env(safe-area-inset-right) + 14px)!important;padding-left:14px!important}
+}
+@media (orientation:landscape){[dir=ltr] #toast{left:calc(50% + var(--dw)/2)}}
