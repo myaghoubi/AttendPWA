@@ -26,7 +26,7 @@ const EN = {
 "ثبت نمونه از دوربین": "Capture sample from camera", "تعویض دوربین": "Switch camera", "افزودن از عکس": "Add from photo", "نمونه‌ها:": "Samples:", "از": "of",
 "نمونه حذف شد": "Sample deleted", "حداکثر نمونه ثبت شده؛ یکی را حذف کن": "Maximum samples stored; delete one first", "نمونه ثبت شد": "Sample saved",
 "در حال بارگذاری…": "Loading…", "بارگذاری مدل‌ها ناموفق بود (اینترنت بار اول لازم است)": "Loading the models failed (internet is needed the first time)", "اجازهٔ دوربین داده نشد": "Camera permission was not granted",
-"چهره‌ای دیده نمی‌شود": "No face visible", "فقط یک نفر مقابل دوربین باشد": "Only one person in front of the camera", "آماده؛ ثبت کن": "Ready; capture", "میلی‌ثانیه": "ms",
+"چهره‌ای دیده نمی‌شود": "No face visible", "فقط یک نفر مقابل دوربین باشد": "Only one person in front of the camera", "روی کادر زرد بزن تا ثبت نام شود؛ روی کادر سبز بزن تا چهره به فرد دیگری نسبت داده شود.": "Tap a yellow box to register a name; tap a green box to assign the face to another person.", "حداکثر نمونه ثبت شده؛ چهره فقط به همین عکس نسبت داده شد": "Maximum samples stored; the face was assigned for this photo only", "آماده؛ ثبت کن": "Ready; capture", "میلی‌ثانیه": "ms",
 "در حال تشخیص…": "Detecting…", "در عکس بیش از یک چهره است؛ عکسی با یک نفر انتخاب کن": "The photo has more than one face; choose a photo with one person", "چهره‌ای در عکس پیدا نشد": "No face found in the photo",
 "آزمایشی": "Trial", "نفر نمونهٔ چهره دارند.": "have face samples.", "اول از «تعریف افراد» نمونه ثبت کن.": "First add samples in “People”.",
 "آستانه (کمتر = سخت‌گیرتر)": "Threshold (lower = stricter)", "ثبت جلسه در سوابق": "Save session to records", "نام ← کمترین فاصله": "Name ← smallest distance",

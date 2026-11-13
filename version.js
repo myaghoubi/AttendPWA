@@ -1,6 +1,19 @@
 // خودکار ساخته می‌شود (pwa_release.py). RELEASES: فهرست فایل‌های تغییرکرده در هر نسخه، جدیدترین اول.
-const APP_VERSION = "1.7.3";
+const APP_VERSION = "1.7.4";
 const RELEASES = [
+ {
+  "v": "1.7.4",
+  "date": "2026-11-13",
+  "fa": "حضور و غیاب از عکس: لمس کادر زرد = ثبت نام موردی، لمس کادر سبز = انتساب چهره به فرد دیگر",
+  "en": "Attendance from photo: tap a yellow box to name the face, tap a green box to reassign it to another person",
+  "files": [
+   "app.js",
+   "face.js",
+   "i18n.js",
+   "sw.js",
+   "version.js"
+  ]
+ },
  {
   "v": "1.7.3",
   "date": "2026-11-13",

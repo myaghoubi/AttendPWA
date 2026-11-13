@@ -140,7 +140,7 @@ async function viewEnroll(c, idx) {
 async function viewAttend(c) {
   c.faces = c.faces || {};
   setBar("حضور و غیاب", {back: "#/c/" + c.id, sub: c.name + " · آزمایشی", acc: "ok"});
-  const gal = Face.gallery(c), enrolled = c.people.filter(n => (c.faces[n] || []).length).length;
+  let gal = Face.gallery(c); const enrolled = c.people.filter(n => (c.faces[n] || []).length).length;
   show(`<div class="muted">${fa(enrolled)} نفر از ${fa(c.people.length)} نفر نمونهٔ چهره دارند.${enrolled ? "" : " اول از «تعریف افراد» نمونه ثبت کن."}</div>
     <div class="chips"><div class="chip on" data-m="cam">دوربین زنده</div><div class="chip" data-m="photo">از عکس</div></div>
     <div id="mode"></div>
@@ -189,18 +189,38 @@ async function viewAttend(c) {
     run();
   }
   function photoMode() {
-    Face.stopCam(); modeEl.innerHTML = `<div class="row"><button class="btn" id="pk" style="flex:1">انتخاب یا گرفتن عکس کلاس</button></div><input type="file" id="fi" accept="image/*" hidden><div class="photo"><canvas id="pc"></canvas></div><div class="muted" id="st"></div>`;
+    Face.stopCam(); modeEl.innerHTML = `<div class="row"><button class="btn" id="pk" style="flex:1">انتخاب یا گرفتن عکس کلاس</button></div><input type="file" id="fi" accept="image/*" hidden><div class="photo"><canvas id="pc"></canvas></div><div class="muted" id="st"></div><div class="muted" id="hint" hidden>روی کادر زرد بزن تا ثبت نام شود؛ روی کادر سبز بزن تا چهره به فرد دیگری نسبت داده شود.</div>`;
+    const srcOf = new Map(); let faces = [], curImg = null;      // نام ← مجموعهٔ چهره‌هایی که او را «حاضر» کرده‌اند
+    const mark = (n, f) => { (srcOf.get(n) || srcOf.set(n, new Set()).get(n)).add(f); if (!found.has(n) || found.get(n) > f.dist) found.set(n, f.dist); };
+    const redraw = () => {
+      const pc = $("#pc"); pc.width = curImg.width; pc.height = curImg.height;
+      pc.getContext("2d").drawImage(curImg, 0, 0); const sc = document.createElement("canvas");
+      drawBoxes(sc, curImg.width, curImg.height, faces.map(f => ({box: f.box, label: f.name || "؟", ok: !!f.name}))); pc.getContext("2d").drawImage(sc, 0, 0);
+    };
     $("#pk").onclick = () => $("#fi").click();
+    $("#pc").onclick = async e => {                                // لمس کادر: ثبت نام موردی (زرد) یا تغییر فرد (سبز)
+      if (!curImg) return;
+      const pc = $("#pc"), rc = pc.getBoundingClientRect(), x = (e.clientX - rc.left) * pc.width / rc.width, y = (e.clientY - rc.top) * pc.height / rc.height;
+      const hit = faces.filter(f => x >= f.box.x && x <= f.box.x + f.box.width && y >= f.box.y && y <= f.box.y + f.box.height).sort((p, q) => p.box.width - q.box.width)[0];
+      if (!hit) return;
+      const th = thumbOf(curImg, hit.box), v = await pickName(c, {s: [{t: th}]});
+      if (!v || v === hit.name) return;
+      if (!c.people.includes(v)) c.people.push(v);
+      const l = (c.faces[v] = c.faces[v] || []);
+      if (l.length < VP("max_faces")) l.push({d: Array.from(hit.d), t: th}); else toast("حداکثر نمونه ثبت شده؛ چهره فقط به همین عکس نسبت داده شد");
+      if (hit.name) { const s = srcOf.get(hit.name); if (s) { s.delete(hit); if (!s.size) { srcOf.delete(hit.name); found.delete(hit.name); } } }
+      hit.name = v; hit.dist = 0; mark(v, hit);
+      gal = Face.gallery(c); save(); redraw(); summary(); toast(`«${v}» ثبت شد`);
+    };
     $("#fi").onchange = async e => {
       const f = e.target.files[0]; if (!f) return; e.target.value = ""; const st = $("#st");
       try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(t => st.textContent = t); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
       st.textContent = "در حال تشخیص…"; const t0 = performance.now();
       const img = await loadImg(f), r = await Face.detect(img, true);
+      curImg = img; faces = r.map(x => ({box: x.detection.box, d: x.descriptor, name: null, dist: 9}));
       let unknown = 0;
-      const items = r.map(x => { const m = Face.match(x.descriptor, gal, thr); if (m.name) { if (!found.has(m.name) || found.get(m.name) > m.dist) found.set(m.name, m.dist); } else unknown++; return {box: x.detection.box, label: m.name || "؟", ok: !!m.name}; });
-      const pc = $("#pc"); pc.width = img.width; pc.height = img.height;
-      pc.getContext("2d").drawImage(img, 0, 0); const sc = document.createElement("canvas");
-      drawBoxes(sc, img.width, img.height, items); pc.getContext("2d").drawImage(sc, 0, 0);
+      r.forEach((x, i) => { const m = Face.match(x.descriptor, gal, thr); faces[i].dist = m.dist; if (m.name) { faces[i].name = m.name; mark(m.name, faces[i]); } else unknown++; });
+      redraw(); $("#hint").hidden = false;
       summary(); st.textContent = `${fa(r.length)} چهره، ${fa(unknown)} ناشناس · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`;
     };
   }

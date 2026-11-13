@@ -74,18 +74,18 @@ function pickName(c, x) {                    // نام جدید بنویس یا 
       ${img ? `<div style="display:flex;justify-content:center;margin:6px 0 10px"><img src="${img}" alt="" style="width:min(56vw,190px);aspect-ratio:1;object-fit:cover;border-radius:18px;box-shadow:var(--shadow)"></div>` : ""}
       <div class="muted" style="text-align:center">نام تازه بنویس یا از فهرست افراد انتخاب کن؛ نمونه‌ها به همان فرد اضافه می‌شود.</div>
       <div style="display:flex;gap:8px;margin-top:12px"><input type="text" id="dv" placeholder="نام جدید…" autocomplete="off" style="flex:1;min-width:0;box-shadow:none;background:var(--card2)">
-      ${ppl.length ? `<button class="btn soft" id="pl" style="white-space:nowrap">انتخاب از لیست</button>` : ""}</div>
-      <div id="pk" style="display:none;flex-direction:column;gap:6px;max-height:34vh;overflow:auto;margin-top:10px"></div>
+      ${ppl.length ? `<button class="btn soft" id="pll" style="white-space:nowrap">انتخاب از لیست</button>` : ""}</div>
+      <div id="pkl" style="display:none;flex-direction:column;gap:6px;max-height:34vh;overflow:auto;margin-top:10px"></div>
       <div class="row"><button class="btn soft" data-r="0">انصراف</button><button class="btn" data-r="1">ثبت</button></div>`;
     const done = v => { dlg.close(); res(v); };
-    const inp = $("#dv"), pk = $("#pk");
+    const inp = $("#dv"), pk = $("#pkl");
     const draw = () => {
       const q = inp.value.trim(), l = ppl.filter(n => !q || n.includes(q));
       pk.innerHTML = l.map(n => `<button class="btn soft" data-n="${esc(n)}" style="justify-content:flex-start;text-align:start;padding:9px 12px">${esc(n)}</button>`).join("");
       pk.querySelectorAll("[data-n]").forEach(b => b.onclick = () => done(b.dataset.n));
     };
     inp.oninput = () => { if (pk.style.display !== "none") draw(); };
-    if ($("#pl")) $("#pl").onclick = () => { const on = pk.style.display === "none"; pk.style.display = on ? "flex" : "none"; if (on) { draw(); pk.scrollIntoView({block: "nearest"}); } };
+    if ($("#pll")) $("#pll").onclick = () => { const on = pk.style.display === "none"; pk.style.display = on ? "flex" : "none"; if (on) { draw(); pk.scrollIntoView({block: "nearest"}); } };
     dlg.querySelectorAll("[data-r]").forEach(b => b.onclick = () => done(b.dataset.r === "1" ? inp.value.trim() : null));
     inp.onkeydown = e => { if (e.key === "Enter") done(inp.value.trim()); };
     dlg.oncancel = () => res(null);
