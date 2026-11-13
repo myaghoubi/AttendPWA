@@ -121,6 +121,7 @@ function viewSettings() {
     <div class="row"><button class="btn" id="ex">دریافت پشتیبان</button><button class="btn soft" id="im">بازیابی از فایل</button></div>
     <input type="file" id="fi" accept="application/json,.json" hidden>`;
   root.appendChild(bk);
+  root.appendChild(offlineSec());
   const ins = document.createElement("div"); ins.className = "setsec";
   ins.innerHTML = `<div class="section">نصب برنامه</div>` + (deferredInstall ? `<button class="btn" id="inst">نصب روی این دستگاه</button>` :
     ios ? `<div class="muted">در آیفون: دکمهٔ اشتراک‌گذاری Safari ← «Add to Home Screen».</div>` :
@@ -179,4 +180,28 @@ function viewVision() {
   rb.onclick = () => { S.settings.vp = {}; save(); viewVision(); toast("به پیش‌فرض برگشت"); };
   root.appendChild(rb);
   show(""); page.appendChild(root);
+}
+
+/* دانلود کامل برنامه (شامل کتابخانه و مدل‌ها) برای کار کاملاً آفلاین */
+function offlineSec() {
+  const all = (typeof APP_FILES !== "undefined" ? APP_FILES : []), heavy = Heavy.files();
+  const tot = all.reduce((s, f) => s + (Heavy.size(f) || 0), 0), hv = heavy.reduce((s, f) => s + Heavy.size(f), 0);
+  const inner = document.createElement("div"); inner.className = "vcard"; inner.style.cssText = "display:flex;flex-direction:column;gap:8px";
+  inner.innerHTML = `<div class="muted">همهٔ فایل‌های برنامه، شامل کتابخانه و مدل‌های تشخیص چهره (${mb(hv)} مگابایت از ${mb(tot)})، در حافظهٔ گوشی ذخیره می‌شود تا برنامه بدون اینترنت کار کند.</div>
+    <div class="muted" id="ost"></div><div id="opg"></div>
+    <div class="row"><button class="btn soft" id="ofl" style="flex:1">دانلود همهٔ فایل‌ها</button><button class="btn soft" id="ohv" style="flex:1">فقط مدل‌ها و کتابخانه</button></div>`;
+  const wrap = sec("دانلود برنامه برای کار آفلاین", inner);
+  const upd = async () => { const s = await Heavy.status(all); inner.querySelector("#ost").textContent = s.n >= s.all ? `همهٔ فایل‌ها ذخیره شده است ✓ (${fa(s.all)} فایل)` : `${fa(s.n)} از ${fa(s.all)} فایل ذخیره شده است`; };
+  upd();
+  const run = async (list, force) => {
+    const bs = inner.querySelectorAll("button"), st = prog(inner.querySelector("#opg")); bs.forEach(b => b.disabled = true);
+    try {
+      await Heavy.fetchAll(list, (f, d, t, n) => st(`${fa(Math.round(f * 100))}٪ (${mb(d)} از ${mb(t)} مگابایت) · ${n}`, f), force);
+      inner.querySelector("#opg").innerHTML = ""; toast("دانلود کامل شد؛ برنامه آفلاین کار می‌کند");
+    } catch (e) { inner.querySelector("#opg").innerHTML = ""; toast("دانلود ناموفق بود (اینترنت؟): " + e.message); }
+    bs.forEach(b => b.disabled = false); upd();
+  };
+  inner.querySelector("#ofl").onclick = () => run(all.filter(f => f !== "sw.js"), true);
+  inner.querySelector("#ohv").onclick = () => run(heavy, false);
+  return wrap;
 }

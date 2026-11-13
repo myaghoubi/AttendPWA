@@ -242,3 +242,7 @@ dialog input[type=text]{width:100%}
 .tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px}
 .tab{flex:none;border:0;border-radius:999px;padding:6px 14px;background:var(--card2);color:var(--text);font:inherit;font-size:13px}
 .tab.on{background:var(--primary);color:var(--on-primary)}.tab small{opacity:.8;margin-inline-start:4px}
+/* نوار پیشرفت */
+.pg{height:8px;border-radius:99px;background:var(--card2);overflow:hidden;margin-top:6px}
+.pg i{display:block;height:100%;width:0;background:var(--primary);border-radius:99px;transition:width .15s linear}
+.pgt{font-size:13px;color:var(--muted);word-break:break-all}

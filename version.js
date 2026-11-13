@@ -1,6 +1,20 @@
 // خودکار ساخته می‌شود (pwa_release.py). RELEASES: فهرست فایل‌های تغییرکرده در هر نسخه، جدیدترین اول.
-const APP_VERSION = "1.8.0";
+const APP_VERSION = "1.8.1";
 const RELEASES = [
+ {
+  "v": "1.8.1",
+  "date": "2026-11-13",
+  "fa": "دانلود کامل برنامه (با مدل‌ها و کتابخانه) در تنظیمات و نوار پیشرفت دانلود مدل‌ها",
+  "en": "Full offline download (with models and library) in Settings and a progress bar when downloading the models",
+  "files": [
+   "face.js",
+   "i18n.js",
+   "settings.js",
+   "style.css",
+   "sw.js",
+   "version.js"
+  ]
+ },
  {
   "v": "1.8.0",
   "date": "2026-11-13",
@@ -118,4 +132,6 @@ const RELEASES = [
   ]
  }
 ];
-const APP_FILES = ["app.js", "face.js", "fonts/IRANSans-Bold.woff2", "fonts/IRANSans-Medium.woff2", "fonts/IRANSans-Regular.woff2", "i18n.js", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "index.html", "manifest.webmanifest", "moodle.js", "records.js", "settings.js", "style.css", "sw.js", "version.js"];
+const APP_FILES = ["app.js", "face.js", "fonts/IRANSans-Bold.woff2", "fonts/IRANSans-Medium.woff2", "fonts/IRANSans-Regular.woff2", "i18n.js", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "index.html", "lib/face-api.js", "manifest.webmanifest", "models/face_landmark_68_model-weights_manifest.json", "models/face_landmark_68_model.bin", "models/face_recognition_model-weights_manifest.json", "models/face_recognition_model.bin", "models/ssd_mobilenetv1_model-weights_manifest.json", "models/ssd_mobilenetv1_model.bin", "models/tiny_face_detector_model-weights_manifest.json", "models/tiny_face_detector_model.bin", "moodle.js", "records.js", "settings.js", "style.css", "sw.js", "version.js"];
+const FILE_SIZES = {"i18n.js": 28357, "sw.js": 2017, "app.js": 28271, "face.js": 32656, "style.css": 18945, "settings.js": 16298, "index.html": 1106, "moodle.js": 25330, "manifest.webmanifest": 571, "records.js": 12782, "icons/maskable-512.png": 27288, "icons/icon-192.png": 11349, "icons/apple-touch-icon.png": 8699, "icons/icon-512.png": 29936, "models/face_recognition_model.bin": 6444032, "models/face_landmark_68_model.bin": 356840, "models/tiny_face_detector_model.bin": 193321, "models/ssd_mobilenetv1_model-weights_manifest.json": 28233, "models/tiny_face_detector_model-weights_manifest.json": 3219, "models/face_recognition_model-weights_manifest.json": 19615, "models/ssd_mobilenetv1_model.bin": 5616957, "models/face_landmark_68_model-weights_manifest.json": 8485, "fonts/IRANSans-Bold.woff2": 29688, "fonts/IRANSans-Medium.woff2": 28916, "fonts/IRANSans-Regular.woff2": 31320, "lib/face-api.js": 1333943};   // بایت؛ برای نوار پیشرفت دانلود
+const HEAVY_FILES = ["lib/face-api.js", "models/face_landmark_68_model-weights_manifest.json", "models/face_landmark_68_model.bin", "models/face_recognition_model-weights_manifest.json", "models/face_recognition_model.bin", "models/ssd_mobilenetv1_model-weights_manifest.json", "models/ssd_mobilenetv1_model.bin", "models/tiny_face_detector_model-weights_manifest.json", "models/tiny_face_detector_model.bin"];   // کتابخانه و مدل‌های تشخیص چهره

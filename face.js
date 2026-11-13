@@ -1,15 +1,58 @@
 "use strict";
 /* مرحلهٔ ۲: دوربین و تشخیص چهره (face-api، روی همین دستگاه؛ هیچ تصویری به جایی ارسال نمی‌شود) */
+/* نوار پیشرفت: مدل‌ها و کتابخانه (حدود ۱۴ مگابایت) بار اول با نوار پیشرفت دانلود و در حافظهٔ آفلاین ذخیره می‌شوند */
+const CACHE_NAME = "attendance-files";
+function prog(el) {
+  return (t, f) => {
+    if (!el.querySelector(".pg")) el.innerHTML = `<div class="pgt"></div><div class="pg"><i></i></div>`;
+    el.querySelector(".pgt").textContent = t; if (f != null) el.querySelector(".pg i").style.width = Math.round(f * 100) + "%";
+  };
+}
+const mb = b => fa((b / 1048576).toFixed(1)).replace(".", isEn() ? "." : "٫");
+const Heavy = {
+  files: () => typeof HEAVY_FILES !== "undefined" ? HEAVY_FILES : [],
+  size: f => (typeof FILE_SIZES !== "undefined" && FILE_SIZES[f]) || 0,
+  // دانلود فایل‌ها با نوار پیشرفت و ذخیره در حافظهٔ آفلاین. force=true: حتی اگر قبلاً ذخیره شده دوباره بگیر
+  async fetchAll(list, cb, force) {
+    if (!window.caches) return;
+    const c = await caches.open(CACHE_NAME), total = list.reduce((s, f) => s + (this.size(f) || 1), 0); let done = 0;
+    for (const f of list) {
+      const sz = this.size(f) || 1;
+      if (!force && await c.match(f)) { done += sz; cb(done / total, done, total, f); continue; }
+      const r = await fetch(f + (force ? "?r=" + Date.now() : ""), {cache: "reload"});
+      if (!r.ok) throw new Error(f + " (" + r.status + ")");
+      const chunks = []; let got = 0;
+      if (r.body?.getReader) {
+        const rd = r.body.getReader();
+        for (;;) { const {done: d, value} = await rd.read(); if (d) break; chunks.push(value); got += value.length; cb(Math.min(1, (done + got) / total), done + got, total, f); }
+      } else chunks.push(new Uint8Array(await r.arrayBuffer()));
+      await c.put(new Request(f), new Response(new Blob(chunks), {headers: {"content-type": r.headers.get("content-type") || ""}}));
+      done += sz; cb(done / total, done, total, f);
+    }
+  },
+  async status(list) {
+    if (!window.caches) return {n: 0, all: list.length};
+    const c = await caches.open(CACHE_NAME); let n = 0;
+    for (const f of list) if (await c.match(f)) n++;
+    return {n, all: list.length};
+  },
+};
 const Face = {
   ready: null, cam: null, loop: 0,
+  subs: new Set(), last: null,
   load(set) {
-    if (this.ready) return this.ready;
+    this.subs.add(set);                                      // چند صفحه می‌توانند هم‌زمان پیشرفت یک بارگذاری را ببینند
+    if (this.ready) { if (this.last) set(...this.last); return this.ready; }
+    const say = set; set = (t, f) => { this.last = [t, f]; this.subs.forEach(s => { try { s(t, f); } catch (_) {} }); };
     this.ready = (async () => {
-      set("بارگذاری کتابخانه…");
+      try { await Heavy.fetchAll(Heavy.files(), (f, d, tot) => set(`دانلود مدل‌ها و کتابخانه: ${fa(Math.round(f * 100))}٪ (${mb(d)} از ${mb(tot)} مگابایت)`, f)); }
+      catch (e) { throw new Error("download"); }
+      set("بارگذاری کتابخانه…", 1);
       await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "lib/face-api.js"; s.onload = ok; s.onerror = () => no(new Error("lib")); document.head.appendChild(s); });
       const n = faceapi.nets, names = [["tinyFaceDetector", "تشخیص سریع"], ["ssdMobilenetv1", "تشخیص دقیق"], ["faceLandmark68Net", "نقاط چهره"], ["faceRecognitionNet", "شناسایی"]];
       for (const [k, t] of names) { set("بارگذاری مدل: " + t + "…"); await n[k].loadFromUri("models"); }
-    })().catch(e => { this.ready = null; throw e; });
+      this.last = null; this.subs.clear();
+    })().catch(e => { this.ready = null; this.last = null; this.subs.clear(); throw e; });
     return this.ready;
   },
   tiny: () => new faceapi.TinyFaceDetectorOptions({inputSize: VP("live_size"), scoreThreshold: VP("det_score")}),
@@ -119,7 +162,7 @@ async function viewEnroll(c, idx) {
     (c.faces[name] = c.faces[name] || []).push({d: Array.from(det.descriptor), t: thumbOf(src, det.detection.box)});
     save(); draw(); toast("نمونه ثبت شد");
   };
-  try { cm.textContent = "در حال بارگذاری…"; await Face.load(t => cm.textContent = t); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود (اینترنت بار اول لازم است)"; return; }
+  try { cm.textContent = "در حال بارگذاری…"; await Face.load(prog(cm)); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود (اینترنت بار اول لازم است)"; return; }
   let facing = "user", last = null, token = ++Face.loop;
   const run = async () => {
     const err = needSecure(); if (err) { cm.textContent = err; return; }
@@ -233,7 +276,7 @@ async function viewAttend(c) {
   async function camMode() {
     Face.stopCam(); modeEl.innerHTML = cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button><button class="btn soft" id="clr" style="flex:1">پاک کردن فهرست</button></div><div class="muted" id="st"></div>`;
     const cm = $("#cm"), vd = $("#vd"), ov = $("#ov"), st = $("#st"); let facing = "environment";
-    try { cm.textContent = "در حال بارگذاری…"; await Face.load(t => cm.textContent = t); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود"; return; }
+    try { cm.textContent = "در حال بارگذاری…"; await Face.load(prog(cm)); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود"; return; }
     if (!vd.isConnected) return;                           // کاربر در همین حین به حالت «عکس» رفته است
     const err = needSecure(); if (err) { cm.textContent = err; return; }
     const run = async () => {
@@ -279,7 +322,7 @@ async function viewAttend(c) {
       absorb: d => { const m = Face.match(d.descriptor, gal, thr), f = {box: d.detection.box, d: d.descriptor, name: m.name, dist: m.dist}; faces.push(f); if (m.name) mark(m.name, f); summary(); shots.draw(); return f; }});
     $("#fi").onchange = async e => {
       const fs = [...e.target.files]; if (!fs.length) return; e.target.value = ""; const st = $("#st");
-      try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(t => st.textContent = t); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
+      try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(prog(st)); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
       const first = shots.list.length; let total = 0, nu = 0; const t0 = performance.now();
       for (let k = 0; k < fs.length; k++) {
         st.textContent = fs.length > 1 ? `در حال تشخیص عکس ${fa(k + 1)} از ${fa(fs.length)}…` : "در حال تشخیص…";
@@ -370,7 +413,7 @@ function scanPanel(c, host, mode, onChange) {
     host.querySelector("#pk").onclick = () => host.querySelector("#fi").click();
     host.querySelector("#fi").onchange = async e => {
       const fs = [...e.target.files]; if (!fs.length) return; e.target.value = "";
-      try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(t => st.textContent = t); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
+      try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(prog(st)); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
       const first = shots.list.length; let total = 0; const t0 = performance.now();
       for (let k = 0; k < fs.length; k++) {
         st.textContent = fs.length > 1 ? `در حال تشخیص عکس ${fa(k + 1)} از ${fa(fs.length)}…` : "در حال تشخیص…";
@@ -386,7 +429,7 @@ function scanPanel(c, host, mode, onChange) {
   const cm = host.querySelector("#cm"), vd = host.querySelector("#vd"), ov = host.querySelector("#ov");
   let facing = "user";
   (async () => {
-    try { cm.textContent = "در حال بارگذاری…"; await Face.load(t => cm.textContent = t); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود"; return; }
+    try { cm.textContent = "در حال بارگذاری…"; await Face.load(prog(cm)); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود"; return; }
     const err = needSecure(); if (err) { cm.textContent = err; return; }
     const run = async () => {
       try { await Face.startCam(vd, facing); } catch (e) { cm.textContent = "اجازهٔ دوربین داده نشد"; return; }
