@@ -1,0 +1,15 @@
+// خودکار (pwa_release.py): هش فایل‌ها با امضای توسعه‌دهنده
+const INTEGRITY = {
+ "files": {
+  "activation.js": "06b3536b6951f29976d76f8ffb1630735ef40934c539a9bcb883faa1184ec232",
+  "app.js": "092fa2a8edf641c5f887db3e02c9583edf2a43c2b585588eb190c96e3596ee90",
+  "face.js": "448930b13f6b8a1fd35b0d3587cc2ef2dc782f7381ca50d17f29021fe9400d1e",
+  "i18n.js": "93747960ad4cb1a119279a3f5e3bdb104180a9a3fd1b934928b2eab9d7a471db",
+  "index.html": "dffa3f28e5462ec0699446597cb85ecab712db1c41f7cba4d70dc49d6941179d",
+  "moodle.js": "8347c52fe11ab284e81cef3184fbe64e11a7b177736f314e64613edafd374fa4",
+  "records.js": "7946a17c28746411cc6e951931a1bb6a8faa540aad489b81885f91044a768615",
+  "reseller.js": "5f82e4e7f5696b1492329110954d7082d22b2a153853aeb38b81e19bd2da3cd5",
+  "settings.js": "cb3d94d6d903e4cd1b50906703fa9ef811c03a5e5968fd3ca609dde1f61d3a8f"
+ },
+ "sig": "3fc744ae7858c167e0c1c4fa9621ee1952f36d87a9b39151bfa51bcc7142a90293beef270b90ed3f1ebaa7fc14c5153c19d7bfb52293d083b7d1322e19a9700e"
+};

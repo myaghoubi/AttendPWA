@@ -429,6 +429,7 @@ function viewPeople(c) {
   if (d && Array.isArray(d.courses)) S = {v: 1, ...d};
   normSettings(); applyTheme(); applyLang();
   await licInit();
+  integrityCheck(); setInterval(integrityCheck, 600000); addEventListener("visibilitychange", () => !document.hidden && integrityCheck());
   navigator.storage?.persist?.();                       // جلوگیری از پاک شدن خودکار داده‌ها
   addEventListener("hashchange", route);
   route();

@@ -88,7 +88,7 @@ async function checkCode(code, dev) {
 }
 
 /* ---- شناسهٔ دستگاه و وضعیت ---- */
-const LIC = {id: "", code: "", ok: false};
+const LIC = {id: "", code: "", ok: false, tamper: false};
 const fmtId = h => h.toUpperCase().match(/.{4}/g).join("-");
 async function licInit() {
   let id = "", code = "";
@@ -97,7 +97,7 @@ async function licInit() {
   try { await Store.set("device", id); localStorage.setItem("att_device", id); } catch (e) {}   // جدا از پشتیبان (پشتیبان کد را به دستگاه دیگر نمی‌برد)
   LIC.id = fmtId(id); LIC.code = code; LIC.ok = code ? await checkCode(code, LIC.id) : false;
 }
-const licensed = () => LIC.ok;
+const licensed = () => LIC.ok && !LIC.tamper;
 async function licActivate(code) {
   if (!(await checkCode(code, LIC.id))) return false;
   LIC.code = code.trim(); LIC.ok = true;
@@ -105,7 +105,7 @@ async function licActivate(code) {
   return true;
 }
 function demoBlocks(count) {                            // true = مسدود (و پیام نشان داده می‌شود)
-  if (licensed() || count <= DEMO_MAX) return false;
+  if (licensed() || count <= (LIC.tamper ? 3 : Math.min(DEMO_MAX, 10))) return false;
   setTimeout(() => ask({title: "نسخهٔ آزمایشی", text: `نسخهٔ آزمایشی حداکثر ${fa(DEMO_MAX)} نفر در هر درس را پشتیبانی می‌کند. برای ادامه برنامه را فعال کن.`, ok: "فعال‌سازی"}).then(v => v && go("#/activate")), 120);        // کمی تأخیر: کلید Enter همان لحظه دکمهٔ دیالوگ را نزند
   return true;
 }
@@ -140,5 +140,41 @@ function viewActivate() {
   $("#ccd").onclick = () => cp(L.card.replace(/-/g, ""), "شمارهٔ کارت کپی شد");
   if ($("#act")) $("#act").onclick = async () => {
     if (await licActivate($("#lc").value)) { toast("برنامه فعال شد"); route(); } else toast("کد برای این دستگاه معتبر نیست");
+  };
+}
+
+/* ---- قفل ضد دست‌کاری: فایل‌های برنامه باید با فهرست هش امضاشدهٔ توسعه‌دهنده (integrity.js) بخوانند ----
+   اگر کسی فایلی را ویرایش کند (مثلاً سقف نسخهٔ آزمایشی)، برنامه قفل می‌شود تا فایل‌ها بازیابی شوند. */
+const _sha256 = async b => _toHex(new Uint8Array(await crypto.subtle.digest("SHA-256", b)));
+async function integrityCheck(force) {
+  try {
+    if (typeof INTEGRITY === "undefined") return setTamper(["integrity.js"]);
+    const names = Object.keys(INTEGRITY.files).sort();
+    const msg = _utf("INT1|" + names.map(n => n + "=" + INTEGRITY.files[n]).join("|"));
+    if (!(await edVerify(MASTER, msg, _hex(INTEGRITY.sig)))) return setTamper(["integrity.js"]);
+    const bad = [];
+    for (const n of names) {
+      let ok = false, net = false;
+      try { ok = (await _sha256(await (await fetch(n)).arrayBuffer())) === INTEGRITY.files[n]; } catch (e) { net = true; }
+      if (!ok && !net) {                                  // شاید فقط نسخهٔ قدیمیِ ذخیره‌شده است: یک بار مستقیم از سرور بگیر
+        try { const r = await fetch(n + "?i=" + Date.now(), {cache: "reload"}); ok = r.ok && (await _sha256(await r.arrayBuffer())) === INTEGRITY.files[n]; if (ok && window.caches) { const c = await caches.open("attendance-files"); await c.put(new Request(n), await fetch(n + "?i=" + Date.now(), {cache: "reload"})); } }
+        catch (e) { ok = true; }                          // آفلاین: تا اتصال بعدی قضاوت نمی‌کنیم
+      }
+      if (!ok) bad.push(n);
+    }
+    setTamper(bad);
+  } catch (e) { /* خطای محیط: قفل نمی‌شود */ }
+}
+function setTamper(bad) {
+  LIC.tamper = bad.length > 0;
+  let o = document.getElementById("tamper");
+  if (!bad.length) { o?.remove(); return; }
+  if (!o) { o = document.createElement("div"); o.id = "tamper"; o.style.cssText = "position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center"; document.body.appendChild(o); }
+  o.innerHTML = `<h2>فایل‌های برنامه تغییر کرده‌اند</h2><div class="muted">فایل‌های زیر با نسخهٔ رسمی نمی‌خوانند و برنامه قفل شده است. با «بازیابی فایل‌ها» دوباره از سرور رسمی گرفته می‌شوند.</div>
+    <div dir="ltr" class="muted" style="font-size:12px">${bad.join(" · ")}</div><button class="btn" id="tfix">بازیابی فایل‌ها</button><div id="tmsg" class="muted"></div>`;
+  document.getElementById("tfix").onclick = async () => {
+    document.getElementById("tmsg").textContent = "در حال دانلود…";
+    try { const c = await caches.open("attendance-files"); for (const n of bad) { const r = await fetch(n + "?i=" + Date.now(), {cache: "reload"}); if (r.ok) await c.put(new Request(n), r); } } catch (e) {}
+    location.reload();
   };
 }

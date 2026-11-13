@@ -49,7 +49,7 @@ const EN = {
 "این شناسه قبلاً کد گرفته است:": "This ID already has a code:", "کد ساخته شد:": "Code created:", "کد ساخته شد": "Code created", "کدهای ساخته‌شده": "Created codes",
 "شناسهٔ دستگاه معتبر نیست (۱۶ رقم/حرف)": "The device ID is not valid (16 digits/letters)", "ظرفیت تمام شده است؛ از توسعه‌دهنده ظرفیت بگیر": "Capacity is used up; ask the developer for more", "ساخت کد ناموفق بود (گواهی ظرفیت معتبر نیست)": "Creating the code failed (the capacity certificate is not valid)",
 "اطلاعات این بخش (کلید همکار و ظرفیت) در پشتیبان نیست و با پاک شدن داده‌های مرورگر از بین می‌رود.": "This section's data (partner key and capacity) is not in the backup and is lost when browser data is cleared.",
-"آماده؛ ثبت کن": "Ready; capture", "میلی‌ثانیه": "ms",
+"فایل‌های برنامه تغییر کرده‌اند": "The app files have been modified", "فایل‌های زیر با نسخهٔ رسمی نمی‌خوانند و برنامه قفل شده است. با «بازیابی فایل‌ها» دوباره از سرور رسمی گرفته می‌شوند.": "The files below do not match the official version and the app is locked. “Restore files” downloads them again from the official server.", "بازیابی فایل‌ها": "Restore files", "در حال دانلود…": "Downloading…", "آماده؛ ثبت کن": "Ready; capture", "میلی‌ثانیه": "ms",
 "در حال تشخیص…": "Detecting…", "در عکس بیش از یک چهره است؛ عکسی با یک نفر انتخاب کن": "The photo has more than one face; choose a photo with one person", "چهره‌ای در عکس پیدا نشد": "No face found in the photo",
 "آزمایشی": "Trial", "نفر نمونهٔ چهره دارند.": "have face samples.", "اول از «تعریف افراد» نمونه ثبت کن.": "First add samples in “People”.",
 "آستانه (کمتر = سخت‌گیرتر)": "Threshold (lower = stricter)", "ثبت جلسه در سوابق": "Save session to records", "نام ← کمترین فاصله": "Name ← smallest distance",
