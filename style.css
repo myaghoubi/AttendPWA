@@ -277,3 +277,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   .tree{margin-inline-start:10px;padding-inline-start:4px}.tree .tree{margin-inline-start:8px}
 }
 @media (orientation:portrait){.mi.tr{padding-block:6px}}
+/* عبارت بلند منو دوخطی نمی‌شود؛ آخرش ... می‌آید */
+.mi{min-width:0}.mt{min-width:0}.mt,.mt small,.mu b,.mu small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mt>*{max-width:100%}
+.mi .mt small{display:block}
+.mu small{word-break:normal}
+.mt{display:block!important}

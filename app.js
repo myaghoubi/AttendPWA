@@ -184,11 +184,12 @@ function menuHtml() {
   const cur = h => (location.hash || "#/") === h ? " cur" : "";
   const hp = (location.hash || "#/").replace(/^#\/?/, "").split("/"), cc = hp[0] === "c" ? course(hp[1]) : null, sub = hp[2] || "";
   const tn = (h, ic, ac, t, on, lvl) => `<button class="mi tr tr${lvl}${on ? " cur" : ""}" data-h="${h}"><span class="mico" style="--ac:var(--${ac})">${icon(ic)}</span><span class="mt">${t}</span></button>`;
-  const tree = cc ? `<div class="tree">${tn("#/c/" + cc.id, "book", cc.acc, esc(cc.name), !sub, 1)}<div class="tree">`
-    + tn(`#/c/${cc.id}/people`, "users", "primary", "تعریف افراد", sub === "people" || sub === "face", 2)
-    + tn(`#/c/${cc.id}/attend`, "cam", "ok", "حضور و غیاب", sub === "attend", 2)
-    + tn(`#/c/${cc.id}/records`, "list", "warn", "سوابق حضور", sub === "records", 2)
-    + (mdReady() ? tn(`#/moodle/sync/${cc.id}`, "sync", "primary", "همگام‌سازی با مودل", false, 2) : "") + `</div></div>` : "";
+  const kids = c => tn(`#/c/${c.id}/people`, "users", "primary", "تعریف افراد", sub === "people" || sub === "face", 2)
+    + tn(`#/c/${c.id}/attend`, "cam", "ok", "حضور و غیاب", sub === "attend", 2)
+    + tn(`#/c/${c.id}/records`, "list", "warn", "سوابق حضور", sub === "records", 2)
+    + (mdReady() ? tn(`#/moodle/sync/${c.id}`, "sync", "primary", "همگام‌سازی با مودل", false, 2) : "");
+  const tree = S.courses.length ? `<div class="tree">` + S.courses.map(c => tn("#/c/" + c.id, "book", c.acc, esc(c.name), cc === c && !sub, 1)
+    + (cc === c ? `<div class="tree">${kids(c)}</div>` : "")).join("") + `</div>` : "";
   dr.innerHTML = `<div class="scrim"></div><nav>
     <div class="nh">حضور و غیاب تصویری</div>${who}${who ? `<div class="hr"></div>` : ""}
     ${item("#/", "book", "primary", "فهرست دروس من")}${tree}<div class="hr"></div>
