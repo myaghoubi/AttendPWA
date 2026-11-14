@@ -103,7 +103,7 @@ addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInsta
 function viewSettings() {
   setBar("تنظیمات", {back: "#/"});
   const s = S.settings, root = document.createElement("div"); root.className = "setgrid";
-  const redo = () => { save(); const y = scrollY; viewSettings(); scrollTo(0, y); };
+  const redo = () => { save(); const y = scrollY || document.body.scrollTop; viewSettings(); scrollTo(0, y); document.body.scrollTop = y; };
   root.appendChild(sec("ظاهر", chipsEl([["dark", "تیره"], ["black", "سیاه"], ["light", "روشن"], ["system", "سیستم"]], s.theme,
     k => { s.theme = k; applyTheme(); redo(); })));
   root.appendChild(sec("زبان", chipsEl([["fa", "فارسی"], ["en", "English"]], s.lang, k => { s.lang = k; save(); applyLang(); route(); })));
