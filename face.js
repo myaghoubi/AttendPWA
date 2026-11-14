@@ -260,13 +260,36 @@ async function viewAttend(c) {
   let thr = VP("match_thr"); $("#thr").oninput = e => { thr = e.target.value / 100; $("#tv").textContent = fa(thr.toFixed(2)).replace(".", "٫"); };
   $("#thr").oninput({target: $("#thr")});
   const found = new Map();                                // نام ← کمترین فاصله
+  const gone = new Set(), alias = new Map();                // زنده: حذف‌شده‌ها و «نام قدیم ← نام اصلاح‌شده»
+  const thumb = new Map();                                // نام ← تصویر کوچک چهرهٔ شناسایی‌شده
+  const crop = (src, b) => {                              // برش مربعی دور چهره (با کمی حاشیه) از ویدیو یا تصویر
+    try {
+      const w = src.videoWidth || src.width, h = src.videoHeight || src.height, m = .25, s = Math.max(b.width, b.height) * (1 + m * 2);
+      const cx = b.x + b.width / 2, cy = b.y + b.height / 2, x0 = Math.max(0, cx - s / 2), y0 = Math.max(0, cy - s / 2), sw = Math.min(s, w - x0), sh = Math.min(s, h - y0);
+      const c = document.createElement("canvas"); c.width = c.height = 96; const g = c.getContext("2d");
+      g.drawImage(src, x0, y0, sw, sh, 0, 0, 96, 96); return c.toDataURL("image/jpeg", .8);
+    } catch (e) { return null; }
+  };
+  const keep = (n, d, src, box) => { if (!thumb.has(n) || (found.get(n) ?? 9) - d > .03) { const t = crop(src, box); if (t) thumb.set(n, t); } };
   const summary = () => {
     const miss = c.people.filter(n => !found.has(n));
     $("#sum").textContent = `حاضر: ${fa(found.size)} از ${fa(c.people.length)}`;
-    $("#res").innerHTML = [...found].map(([n, d]) => `<div class="card" style="min-height:52px;cursor:default"><div class="avatar" style="width:36px;height:36px">${esc([...n][0])}</div><div class="txt"><div class="t">${esc(n)}</div></div><div class="muted">${fa(d.toFixed(2)).replace(".", "٫")}</div></div>`).join("") +
+    $("#res").innerHTML = [...found].map(([n, d]) => `<div class="card" style="min-height:52px;cursor:default">${thumb.has(n) ? `<img src="${thumb.get(n)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none">` : `<div class="avatar" style="width:36px;height:36px">${esc([...n][0])}</div>`}<div class="txt"><div class="t">${esc(n)}</div><div class="s">${fa(d.toFixed(2)).replace(".", "٫")}</div></div><div class="act"><button class="mini" data-ren="${esc(n)}" aria-label="تغییر نام">${icon("edit")}</button><button class="mini del" data-del="${esc(n)}" aria-label="حذف از فهرست">${icon("trash")}</button></div></div>`).join("") +
       (miss.length ? `<div class="muted">غایب/دیده‌نشده: ${esc(miss.join("، "))}</div>` : "");
   };
   summary();
+  let onDrop = n => {}, onMove = (a, b) => {};                // حالت فعال (زنده یا عکس) این‌ها را تنظیم می‌کند
+  $("#res").onclick = async e => {
+    const d = e.target.closest("[data-del]"), r = e.target.closest("[data-ren]");
+    if (d) { const n = d.dataset.del; found.delete(n); thumb.delete(n); onDrop(n); summary(); toast(`«${n}» از فهرست حاضرین برداشته شد`); }
+    if (r) {
+      const a = r.dataset.ren, b = await pickPerson(c, a, thumb.get(a)); if (!b || b === a) return;
+      const da = found.get(a), db = found.get(b);
+      found.delete(a); if (db === undefined || da < db) found.set(b, da);
+      const ta = thumb.get(a); thumb.delete(a); if (ta && (db === undefined || da < db || !thumb.has(b))) thumb.set(b, ta);
+      onMove(a, b); summary(); toast(`«${a}» ← «${b}»`);
+    }
+  };
   $("#sv").onclick = async () => {
     if (!c.people.length) return toast("اول افراد را تعریف کن");
     if (!found.size && !await ask({title: "ثبت جلسه", text: "هیچ‌کس شناسایی نشده؛ همه غایب ثبت شوند؟", ok: "ثبت"})) return;
@@ -274,7 +297,8 @@ async function viewAttend(c) {
   };
   const modeEl = $("#mode");
   async function camMode() {
-    Beep.unlock(); Face.stopCam(); modeEl.innerHTML = cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button><button class="btn soft" id="clr" style="flex:1">پاک کردن فهرست</button></div><div class="muted" id="st"></div>`;
+    Beep.unlock(); Face.stopCam();
+    onDrop = n => gone.add(n); onMove = (a, b) => { for (const [k, v] of alias) if (v === a) alias.set(k, b); alias.set(a, b); gone.delete(b); }; modeEl.innerHTML = cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button><button class="btn soft" id="clr" style="flex:1">پاک کردن فهرست</button></div><div class="muted" id="st"></div>`;
     const cm = $("#cm"), vd = $("#vd"), ov = $("#ov"), st = $("#st"); let facing = "environment";
     try { cm.textContent = "در حال بارگذاری…"; await Face.load(prog(cm)); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود"; return; }
     if (!vd.isConnected) return;                           // کاربر در همین حین به حالت «عکس» رفته است
@@ -288,7 +312,7 @@ async function viewAttend(c) {
         try {
           const r = await Face.detect(vd, false); if (token !== Face.loop) return;
           let fresh = 0;
-          const items = r.map(x => { const m = Face.match(x.descriptor, gal, thr); if (m.name && !found.has(m.name)) fresh++; if (m.name && (!found.has(m.name) || found.get(m.name) > m.dist)) found.set(m.name, m.dist); return {box: x.detection.box, label: m.name || "؟", ok: !!m.name}; });
+          const items = r.map(x => { const m = Face.match(x.descriptor, gal, thr); if (m.name && alias.has(m.name)) m.name = alias.get(m.name); if (m.name && gone.has(m.name)) return {box: x.detection.box, label: m.name, ok: true}; if (m.name && !found.has(m.name)) fresh++; if (m.name) { keep(m.name, m.dist, vd, x.detection.box); if (!found.has(m.name) || found.get(m.name) > m.dist) found.set(m.name, m.dist); } return {box: x.detection.box, label: m.name || "؟", ok: !!m.name}; });
           drawBoxes(ov, vd.videoWidth, vd.videoHeight, items); summary(); if (fresh) Beep.tick(fresh);
           st.textContent = `${fa(r.length)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`;
         } catch (e) {}
@@ -297,14 +321,14 @@ async function viewAttend(c) {
       tick();
     };
     $("#flip").onclick = () => { facing = facing === "user" ? "environment" : "user"; run(); };
-    $("#clr").onclick = () => { found.clear(); summary(); };
+    $("#clr").onclick = () => { found.clear(); thumb.clear(); gone.clear(); alias.clear(); summary(); };
     run();
   }
   function photoMode() {
     Face.stopCam(); modeEl.innerHTML = `<div class="row"><button class="btn" id="pk" style="flex:1">انتخاب یا گرفتن عکس کلاس</button></div><input type="file" id="fi" accept="image/*" multiple hidden><div class="tabs" id="tb" hidden></div><div class="photo"><canvas id="pc"></canvas></div><div class="muted" id="st"></div><div class="muted" id="hint" hidden>روی کادر زرد بزن تا ثبت نام شود؛ روی کادر سبز بزن تا چهره به فرد دیگری نسبت داده شود؛ روی چهرهٔ بدون کادر بزن تا همان اطراف دوباره پردازش شود.</div>`;
     const srcOf = new Map(); let faces = [], curImg = null;
     const shots = photoShots($("#pc"), $("#tb"), s => { curImg = s.img; faces = s.faces; redraw(); });      // نام ← مجموعهٔ چهره‌هایی که او را «حاضر» کرده‌اند
-    const mark = (n, f) => { (srcOf.get(n) || srcOf.set(n, new Set()).get(n)).add(f); if (!found.has(n) || found.get(n) > f.dist) found.set(n, f.dist); };
+    const mark = (n, f, img) => { (srcOf.get(n) || srcOf.set(n, new Set()).get(n)).add(f); if (img) keep(n, f.dist, img, f.box); if (!found.has(n) || found.get(n) > f.dist) found.set(n, f.dist); };
     const redraw = () => {
       const pc = $("#pc"); pc.width = curImg.width; pc.height = curImg.height;
       pc.getContext("2d").drawImage(curImg, 0, 0); const sc = document.createElement("canvas");
@@ -316,12 +340,14 @@ async function viewAttend(c) {
       if (!c.people.includes(v)) c.people.push(v);
       const l = (c.faces[v] = c.faces[v] || []);
       if (l.length < VP("max_faces")) l.push({d: Array.from(hit.d), t: th}); else toast("حداکثر نمونه ثبت شده؛ چهره فقط به همین عکس نسبت داده شد");
-      if (hit.name) { const s = srcOf.get(hit.name); if (s) { s.delete(hit); if (!s.size) { srcOf.delete(hit.name); found.delete(hit.name); } } }
-      hit.name = v; hit.dist = 0; mark(v, hit);
+      if (hit.name) { const s = srcOf.get(hit.name); if (s) { s.delete(hit); if (!s.size) { srcOf.delete(hit.name); found.delete(hit.name); thumb.delete(hit.name); } } }
+      hit.name = v; hit.dist = 0; thumb.delete(v); mark(v, hit, curImg);
       gal = Face.gallery(c); save(); redraw(); summary(); toast(`«${v}» ثبت شد`);
     };
     bindPhotoTap($("#pc"), c, {img: () => curImg, faces: () => faces, assign, redraw, msg: s => $("#st").textContent = s,
-      absorb: d => { const m = Face.match(d.descriptor, gal, thr), f = {box: d.detection.box, d: d.descriptor, name: m.name, dist: m.dist}; faces.push(f); if (m.name) mark(m.name, f); summary(); shots.draw(); return f; }});
+      absorb: d => { const m = Face.match(d.descriptor, gal, thr), f = {box: d.detection.box, d: d.descriptor, name: m.name, dist: m.dist}; faces.push(f); if (m.name) mark(m.name, f, curImg); summary(); shots.draw(); return f; }});
+    onDrop = n => { (srcOf.get(n) || []).forEach(f => { f.name = null; f.dist = 9; }); srcOf.delete(n); shots.draw(); };
+    onMove = (a, b) => { const s = srcOf.get(a); srcOf.delete(a); if (!s) return; const t = srcOf.get(b) || srcOf.set(b, new Set()).get(b); s.forEach(f => { f.name = b; t.add(f); }); shots.draw(); };
     $("#fi").onchange = async e => {
       const fs = [...e.target.files]; if (!fs.length) return; e.target.value = ""; const st = $("#st");
       try { st.textContent = "در حال بارگذاری مدل‌ها…"; await Face.load(prog(st)); } catch (er) { return st.textContent = "بارگذاری مدل‌ها ناموفق بود"; }
@@ -329,7 +355,7 @@ async function viewAttend(c) {
       for (let k = 0; k < fs.length; k++) {
         st.textContent = fs.length > 1 ? `در حال تشخیص عکس ${fa(k + 1)} از ${fa(fs.length)}…` : "در حال تشخیص…";
         const img = await loadImg(fs[k]), r = await Face.detect(img, true), fl = [];
-        r.forEach(x => { const m = Face.match(x.descriptor, gal, thr), f = {box: x.detection.box, d: x.descriptor, name: m.name, dist: m.dist}; fl.push(f); if (m.name) mark(m.name, f); else nu++; });
+        r.forEach(x => { const m = Face.match(x.descriptor, gal, thr), f = {box: x.detection.box, d: x.descriptor, name: m.name, dist: m.dist}; fl.push(f); if (m.name) mark(m.name, f, img); else nu++; });
         shots.list.push({img, faces: fl}); total += r.length;
       }
       shots.show(first); $("#hint").hidden = false; summary();
@@ -467,3 +493,17 @@ const Beep = {ctx: null, last: 0,
       o.connect(g); g.connect(c.destination); o.start(t + d); o.stop(t + d + .18);
     });
   }};
+
+/* انتخاب یک فرد از فهرست کشویی افراد درس (برای اصلاح نام در فهرست حاضرین) */
+function pickPerson(c, cur, img) {
+  return new Promise(res => {
+    dlg.innerHTML = `<h2 style="text-align:center">تغییر نام فرد</h2>
+      ${img ? `<div style="display:flex;justify-content:center;margin:6px 0 10px"><img src="${img}" alt="" style="width:min(40vw,140px);aspect-ratio:1;object-fit:cover;border-radius:18px;box-shadow:var(--shadow)"></div>` : ""}
+      <div class="muted" style="text-align:center">«${esc(cur)}» را به چه کسی تغییر بدهم؟</div>
+      <select id="ps" style="width:100%;margin-top:12px;padding:12px;border-radius:12px;border:0;background:var(--card2);color:inherit;font:inherit;font-size:16px">${c.people.filter(n => n !== cur).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("")}</select>
+      <div class="row"><button class="btn soft" data-r="0">انصراف</button><button class="btn" data-r="1">تغییر</button></div>`;
+    const done = v => { dlg.close(); res(v); };
+    dlg.querySelectorAll("[data-r]").forEach(b => b.onclick = () => done(b.dataset.r === "1" ? ($("#ps").value || null) : null));
+    dlg.oncancel = () => res(null); dlg.showModal();
+  });
+}
