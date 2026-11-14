@@ -1,7 +1,7 @@
 // خودکار (pwa_release.py): هش فایل‌ها با امضای توسعه‌دهنده
 const INTEGRITY = {
  "files": {
-  "activation.js": "06b3536b6951f29976d76f8ffb1630735ef40934c539a9bcb883faa1184ec232",
+  "activation.js": "2eb90fb7a4d6342a48e7af40e55b1531bbc3c339a4a446ef3c01e628fb85ab8d",
   "app.js": "389af9fb7140fae133c818d912aaa4bdffd25a5eb631a4219ec53f089a290d0c",
   "face.js": "448930b13f6b8a1fd35b0d3587cc2ef2dc782f7381ca50d17f29021fe9400d1e",
   "fx.js": "21b4d51d703acff0d4e431bc3b5f87681f76fdd1580d8c79acc98cc963303861",
@@ -12,5 +12,5 @@ const INTEGRITY = {
   "reseller.js": "4a0602d6030c33cebc25d2b9ce6093a87c09d51686485e5900e558e6cdb1bc99",
   "settings.js": "f03551897317e7c3f776eefe8adda9173fb92e9bd61f2efbb015837835c3562d"
  },
- "sig": "f6cf84c21c26795e507d6b7e49e8cd8aacb2e276938d9746f80b7abc9cdfd1aa411a4bc5fe343f2bedefd070c20b10ff976396927481efd9d15d1cdc4848e60d"
+ "sig": "a3e933ca29fc1d3c38548844037d9c00d98449f7a13201ef7c344da12bd6c249d9a4887cf7a8ccefccffc528cfa9a81b4f4e798d9f39ee91503d3846e50bdd0c"
 };
