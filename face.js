@@ -266,8 +266,8 @@ async function viewAttend(c) {
     try {
       const w = src.videoWidth || src.width, h = src.videoHeight || src.height, m = .25, s = Math.max(b.width, b.height) * (1 + m * 2);
       const cx = b.x + b.width / 2, cy = b.y + b.height / 2, x0 = Math.max(0, cx - s / 2), y0 = Math.max(0, cy - s / 2), sw = Math.min(s, w - x0), sh = Math.min(s, h - y0);
-      const c = document.createElement("canvas"); c.width = c.height = 192; const g = c.getContext("2d");
-      g.drawImage(src, x0, y0, sw, sh, 0, 0, 192, 192); return c.toDataURL("image/jpeg", .85);
+      const c = document.createElement("canvas"); c.width = c.height = 288; const g = c.getContext("2d");
+      g.drawImage(src, x0, y0, sw, sh, 0, 0, 288, 288); return c.toDataURL("image/jpeg", .85);
     } catch (e) { return null; }
   };
   const keep = (n, d, src, box) => { if (!thumb.has(n) || (found.get(n) ?? 9) - d > .03) { const t = crop(src, box); if (t) thumb.set(n, t); } };
@@ -294,7 +294,7 @@ async function viewAttend(c) {
   $("#res").addEventListener("pointerdown", e => {
     const im = e.target.closest("img[data-z]"); if (!im) return;
     zoomOff(); zoom = document.createElement("div");
-    zoom.style.cssText = "position:fixed;z-index:3000;top:calc(env(safe-area-inset-top) + 70px);left:50%;transform:translateX(-50%);width:176px;height:176px;border-radius:50%;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.45);border:4px solid #fff;background:#000;pointer-events:none";
+    zoom.style.cssText = "position:fixed;z-index:3000;top:calc(env(safe-area-inset-top) + 70px);left:50%;transform:translateX(-50%);width:min(264px,70vw);height:min(264px,70vw);border-radius:50%;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.65),0 4px 12px rgba(0,0,0,.4);border:4px solid #fff;background:#000;pointer-events:none";
     zoom.innerHTML = `<img src="${im.src}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">`; document.body.appendChild(zoom);
   });
   $("#res").addEventListener("contextmenu", e => { if (e.target.closest("img[data-z]")) e.preventDefault(); });
