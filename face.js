@@ -271,10 +271,11 @@ async function viewAttend(c) {
     } catch (e) { return null; }
   };
   const keep = (n, d, src, box) => { if (!thumb.has(n) || (found.get(n) ?? 9) - d > .03) { const t = crop(src, box); if (t) thumb.set(n, t); } };
+  /* پس‌زمینهٔ کادر: ۲۵٪ شفافیت از لبهٔ شروع که تا عرضِ «درصد تطبیق» به ۰ می‌رسد */
   const summary = () => {
     const miss = c.people.filter(n => !found.has(n));
     $("#sum").textContent = `حاضر: ${fa(found.size)} از ${fa(c.people.length)}`;
-    $("#res").innerHTML = [...found].map(([n, d]) => { const pc = pctOf(d, thr), bg = `color-mix(in srgb, ${pctColor(pc)} 50%, var(--card))`; return `<div class="card" style="min-height:52px;cursor:default;background:${bg}">${thumb.has(n) ? `<img src="${thumb.get(n)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none">` : `<div class="avatar" style="width:36px;height:36px">${esc([...n][0])}</div>`}<div class="txt"><div class="t">${esc(n)}</div><div class="s" style="font-weight:700;opacity:.85">تطبیق ${fa(Math.round(pc))}٪</div></div><div class="act"><button class="mini" data-ren="${esc(n)}" aria-label="تغییر نام">${icon("edit")}</button><button class="mini del" data-del="${esc(n)}" aria-label="حذف از فهرست">${icon("trash")}</button></div></div>`; }).join("") +
+    $("#res").innerHTML = [...found].map(([n, d]) => { const pc = pctOf(d, thr), bg = `linear-gradient(${isEn() ? "to right" : "to left"}, ${pctColor(pc, .25)} 0%, ${pctColor(pc, 0)} ${pc.toFixed(1)}%), var(--card)`; return `<div class="card" style="min-height:52px;cursor:default;background:${bg}">${thumb.has(n) ? `<img src="${thumb.get(n)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none">` : `<div class="avatar" style="width:36px;height:36px">${esc([...n][0])}</div>`}<div class="txt"><div class="t">${esc(n)}</div><div class="s" style="font-weight:700;opacity:.85">تطبیق ${fa(Math.round(pc))}٪</div></div><div class="act"><button class="mini" data-ren="${esc(n)}" aria-label="تغییر نام">${icon("edit")}</button><button class="mini del" data-del="${esc(n)}" aria-label="حذف از فهرست">${icon("trash")}</button></div></div>`; }).join("") +
       (miss.length ? `<div class="muted">غایب/دیده‌نشده: ${esc(miss.join("، "))}</div>` : "");
   };
   summary();
@@ -511,4 +512,4 @@ function pickPerson(c, cur, img) {
 /* درصد تطبیق: فاصلهٔ ۰ (یا اختصاص دستی) = ۱۰۰٪ و فاصلهٔ برابر آستانهٔ شناسایی = ۵۰٪؛ بیشتر از آن به سمت ۰٪ */
 function pctOf(d, thr) { return Math.max(0, Math.min(100, 100 - 50 * d / (thr || .5))); }
 /* طیف رنگ: ۱۰۰٪ سبز، حدود ۵۰٪ نارنجی، زیر ۲۰٪ قرمز */
-function pctColor(p) { const h = p <= 20 ? 0 : p <= 50 ? (p - 20) * (32 / 30) : 32 + (p - 50) * (98 / 50); return `hsl(${h.toFixed(0)} 75% 48%)`; }
+function pctColor(p, a = 1) { const h = p <= 20 ? 0 : p <= 50 ? (p - 20) * (32 / 30) : 32 + (p - 50) * (98 / 50); return `hsl(${h.toFixed(0)} 75% 48% / ${a})`; }
