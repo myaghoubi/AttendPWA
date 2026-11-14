@@ -283,3 +283,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .mi .mt small{display:block}
 .mu small{word-break:normal}
 .mt{display:block!important}
+
+/* اسکرول‌بار: نازک و هم‌رنگ تم؛ در فارسی سمت چپ و در انگلیسی سمت راست (جهت صفحه) */
+html{direction:rtl}html[dir=ltr]{direction:ltr}
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--primary) 55%,transparent) transparent}
+*:hover{scrollbar-color:color-mix(in srgb,var(--primary) 80%,transparent) transparent}
+/* عکس پروفایل مودل کنار نام در منو */
+.mu.hasp{flex-direction:row;align-items:center;gap:10px}
+.mu .mutx{min-width:0;flex:1;display:flex;flex-direction:column}
+.mpic{width:48px;height:48px;border-radius:50%;object-fit:cover;flex:none;background:var(--card2)}

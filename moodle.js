@@ -306,7 +306,7 @@ function viewMoodle() {
     res.textContent = "در حال ارتباط با مودل…";
     try {
       MD.reset(); const s = await MD.site(), fns = new Set((s.functions || []).map(f => f.name));
-      m.user = {fullname: s.fullname, username: s.username, sitename: s.sitename, siteurl: s.siteurl, userid: s.userid}; save();
+      m.user = {fullname: s.fullname, username: s.username, sitename: s.sitename, siteurl: s.siteurl, userid: s.userid, pic: s.userpictureurl || ""}; save();
       const need = ["core_enrol_get_users_courses", "core_enrol_get_enrolled_users", "core_course_get_contents", "mod_attendance_get_session", "mod_attendance_add_session", "mod_attendance_update_user_status"];
       const miss = need.filter(f => !fns.has(f));
       res.textContent = `اتصال برقرار شد.\nسایت: ${s.sitename}\nکاربر: ${s.fullname} (${s.username})\n` +
