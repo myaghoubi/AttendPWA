@@ -302,3 +302,13 @@ html{direction:rtl}html[dir=ltr]{direction:ltr}
 /* اسکرول منوی اصلی: فقط وقتی موس روی منو است دیده می‌شود */
 #drawer nav{scrollbar-color:transparent transparent}
 #drawer nav:hover{scrollbar-color:color-mix(in srgb,var(--primary) 70%,transparent) transparent}
+
+/* صفحهٔ عمودی عریض (تبلت/رایانه): همان شبکهٔ ستونی حالت افقی، با تعداد ستونِ خودکار */
+@media (orientation:portrait) and (min-width:600px){
+  #page{max-width:none;display:grid;grid-template-columns:repeat(var(--lc,1),minmax(0,1fr));align-content:start;gap:10px}
+  #page>*{grid-column:1/-1}
+  #page>.card,#page>.chart.full{grid-column:auto}
+  #page>.chart.full{grid-column:1/-1}
+  .setgrid,#lst,#unk{display:grid;grid-template-columns:repeat(var(--lc,1),minmax(0,1fr));gap:10px;align-items:start}
+  .setgrid>.full,.setgrid>.gh{grid-column:1/-1}
+}

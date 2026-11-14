@@ -1,14 +1,25 @@
 "use strict";
 /* تنظیمات برنامه: تم‌ها، ظاهر، حالت افقی، پارامترهای شناسایی چهره، پشتیبان‌گیری */
-const DEFAULTS = {theme: "system", lang: "fa", landCharts: false, beep: true, cal: "jalali", limit: 6, landCols: 2, undoK: 1, nameW: 140, vp: {},
+const DEFAULTS = {theme: "system", lang: "fa", landCharts: false, beep: true, cal: "jalali", limit: 6, landCols: 2, colsAuto: true, undoK: 1, nameW: 140, vp: {},
   md: {on: false, url: "", token: "", service: "moodle_mobile_app", proxy: "", user: null}};
 function normSettings() {
   const old = S.settings || {};
   S.settings = Object.assign({}, DEFAULTS, old, {vp: Object.assign({}, old.vp), md: Object.assign({}, DEFAULTS.md, old.md)});
-  S.settings.lang = S.settings.lang === "en" ? "en" : "fa"; S.settings.landCharts = !!S.settings.landCharts; S.settings.beep = S.settings.beep !== false;
+  S.settings.lang = S.settings.lang === "en" ? "en" : "fa"; S.settings.landCharts = !!S.settings.landCharts; S.settings.beep = S.settings.beep !== false; S.settings.colsAuto = S.settings.colsAuto !== false;
   if (!["system", "dark", "black", "light"].includes(S.settings.theme)) S.settings.theme = "system";
-  document.documentElement.style.setProperty("--lc", S.settings.landCols);
+  applyCols();
 }
+/* تعداد ستون اجزای صفحه: خودکار = متناسب با عرض محتوای صفحه (پله‌ای مثل bootstrap)؛ دستی = فقط در حالت افقی */
+function applyCols() {
+  const st = S.settings, root = document.documentElement;
+  let n;
+  if (st.colsAuto) {
+    const pg = document.getElementById("page"), cs = pg && getComputedStyle(pg), w = pg ? pg.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : innerWidth;   // عرض خالص محتوا (بدون جای منوی ثابت)
+    n = w < 600 ? 1 : w < 900 ? 2 : w < 1200 ? 3 : 4;
+  } else n = matchMedia("(orientation:landscape)").matches ? st.landCols : 1;
+  root.style.setProperty("--lc", n);
+}
+addEventListener("resize", () => { if (typeof S !== "undefined" && S.settings) applyCols(); });
 function applyTheme() {
   const t = S.settings?.theme || "system";
   const k = t === "system" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : t;
@@ -110,8 +121,9 @@ function viewSettings() {
   root.appendChild(sec("صدای تیک هنگام شناسایی در دوربین زنده", chipsEl([["1", "با صدا"], ["0", "بی‌صدا"]], s.beep ? "1" : "0", k => { s.beep = k === "1"; if (s.beep) Beep.unlock(), Beep.tick(); redo(); })));
   root.appendChild(sec("تقویم", chipsEl([["jalali", "شمسی"], ["gregorian", "میلادی"]], s.cal, k => { s.cal = k; redo(); })));
   root.appendChild(sec("حد مجاز غیبت (بعد از آن ردیف قرمز می‌شود)", sliderRow(s.limit, 3, 8, 1, null, v => { s.limit = v; save(); })));
-  root.appendChild(sec("تعداد ستون اجزای صفحه در حالت افقی", sliderRow(s.landCols, 1, 4, 1,
-    v => document.documentElement.style.setProperty("--lc", v), v => { s.landCols = v; save(); })));
+  root.appendChild(sec("تعداد ستون اجزای صفحه", chipsEl([["1", "خودکار (متناسب با عرض صفحه)"], ["0", "دستی"]], s.colsAuto ? "1" : "0", k => { s.colsAuto = k === "1"; applyCols(); redo(); })));
+  root.appendChild(sec("تعداد ستون در حالت دستی (فقط حالت افقی)", sliderRow(s.landCols, 1, 4, 1,
+    v => { s.landCols = v; applyCols(); }, v => { s.landCols = v; save(); applyCols(); })));
   root.appendChild(sec("تعداد مراحل برگرداندن حذف (۰ تا ۵؛ صفر یعنی خاموش)", sliderRow(s.undoK, 0, 5, 1, null, v => { s.undoK = v; save(); trashPurge(); })));
   const nav = (t, h) => { const b = document.createElement("button"); b.className = "btn soft"; b.textContent = t; b.onclick = () => go(h); return b; };
   root.appendChild(sec("بخش‌ها", nav("شناسایی و پردازش چهره", "#/vision"), nav("اتصال به مودل", "#/moodle")));

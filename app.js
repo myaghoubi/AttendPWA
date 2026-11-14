@@ -120,7 +120,7 @@ function setBar(title, {back, sub, right = "", acc} = {}) {
   $("#mn").onclick = () => $("#drawer").classList.contains("open") ? closeMenu() : openMenu();
   $("#mn").classList.toggle("open", $("#drawer").classList.contains("open"));
 }
-function show(html) { page.innerHTML = html; page.classList.remove("page-in"); void page.offsetWidth; page.classList.add("page-in"); window.scrollTo(0, 0); document.body.scrollTop = 0; }
+function show(html) { applyCols(); page.innerHTML = html; page.classList.remove("page-in"); void page.offsetWidth; page.classList.add("page-in"); window.scrollTo(0, 0); document.body.scrollTop = 0; }
 const course = id => S.courses.find(c => c.id === id);
 
 function route() {
