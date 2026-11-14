@@ -299,3 +299,6 @@ html{direction:rtl}html[dir=ltr]{direction:ltr}
   html{overflow:hidden;height:100%}
   body{height:100%;min-height:0;overflow-y:auto;overflow-x:hidden}
 }
+/* اسکرول منوی اصلی: فقط وقتی موس روی منو است دیده می‌شود */
+#drawer nav{scrollbar-color:transparent transparent}
+#drawer nav:hover{scrollbar-color:color-mix(in srgb,var(--primary) 70%,transparent) transparent}
