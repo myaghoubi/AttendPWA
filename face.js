@@ -266,8 +266,8 @@ async function viewAttend(c) {
     try {
       const w = src.videoWidth || src.width, h = src.videoHeight || src.height, m = .25, s = Math.max(b.width, b.height) * (1 + m * 2);
       const cx = b.x + b.width / 2, cy = b.y + b.height / 2, x0 = Math.max(0, cx - s / 2), y0 = Math.max(0, cy - s / 2), sw = Math.min(s, w - x0), sh = Math.min(s, h - y0);
-      const c = document.createElement("canvas"); c.width = c.height = 96; const g = c.getContext("2d");
-      g.drawImage(src, x0, y0, sw, sh, 0, 0, 96, 96); return c.toDataURL("image/jpeg", .8);
+      const c = document.createElement("canvas"); c.width = c.height = 192; const g = c.getContext("2d");
+      g.drawImage(src, x0, y0, sw, sh, 0, 0, 192, 192); return c.toDataURL("image/jpeg", .85);
     } catch (e) { return null; }
   };
   const keep = (n, d, src, box) => { if (!thumb.has(n) || (found.get(n) ?? 9) - d > .03) { const t = crop(src, box); if (t) thumb.set(n, t); } };
@@ -280,7 +280,7 @@ async function viewAttend(c) {
       const absent = d === null, pc = absent ? 0 : pctOf(d, thr),
         bg = absent ? "linear-gradient(rgba(220,38,38,.12),rgba(220,38,38,.12)), var(--card)"
           : `linear-gradient(${isEn() ? "to right" : "to left"}, ${pctColor(pc, .25)} 0%, ${pctColor(pc, 0)} ${pc.toFixed(1)}%), var(--card)`;
-      const av = thumb.has(n) ? `<img src="${thumb.get(n)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none">` : `<div class="avatar" style="width:36px;height:36px">${esc([...n][0])}</div>`;
+      const av = thumb.has(n) ? `<img data-z="1" draggable="false" src="${thumb.get(n)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;-webkit-touch-callout:none;user-select:none;touch-action:none">` : `<div class="avatar" style="width:36px;height:36px">${esc([...n][0])}</div>`;
       const act = absent ? `<button class="mini" data-ok="${esc(n)}" aria-label="حاضر" style="color:var(--ok)">${CHK}</button>`
         : `<button class="mini" data-ren="${esc(n)}" aria-label="تغییر نام">${icon("edit")}</button><button class="mini del" data-del="${esc(n)}" aria-label="غایب">${icon("trash")}</button>`;
       return `<div class="card" style="min-height:52px;cursor:default;background:${bg}${absent ? ";opacity:.9" : ""}">${av}<div class="txt"><div class="t">${esc(n)}</div><div class="s" style="font-weight:700;opacity:.85">تطبیق ${fa(Math.round(pc))}٪</div></div><div class="act">${act}</div></div>`;
@@ -288,6 +288,17 @@ async function viewAttend(c) {
   };
   summary();
   let onDrop = n => {}, onMove = (a, b) => {}, onAdd = n => {};                // حالت فعال (زنده یا عکس) این‌ها را تنظیم می‌کند
+  /* نگه داشتن انگشت/ماوس روی عکس فرد: دایرهٔ بزرگ (حدود ۴ برابر) بالای صفحه؛ با برداشتن لمس ناپدید می‌شود */
+  let zoom = null;
+  const zoomOff = () => { zoom?.remove(); zoom = null; };
+  $("#res").addEventListener("pointerdown", e => {
+    const im = e.target.closest("img[data-z]"); if (!im) return;
+    zoomOff(); zoom = document.createElement("div");
+    zoom.style.cssText = "position:fixed;z-index:3000;top:calc(env(safe-area-inset-top) + 70px);left:50%;transform:translateX(-50%);width:176px;height:176px;border-radius:50%;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.45);border:4px solid #fff;background:#000;pointer-events:none";
+    zoom.innerHTML = `<img src="${im.src}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">`; document.body.appendChild(zoom);
+  });
+  $("#res").addEventListener("contextmenu", e => { if (e.target.closest("img[data-z]")) e.preventDefault(); });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(t => addEventListener(t, zoomOff, true));
   $("#res").onclick = async e => {
     const d = e.target.closest("[data-del]"), r = e.target.closest("[data-ren]"), ok = e.target.closest("[data-ok]");
     if (d) { const n = d.dataset.del; found.delete(n); thumb.delete(n); onDrop(n); summary(); toast(`«${n}» غایب شد`); }
