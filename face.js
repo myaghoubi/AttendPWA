@@ -273,16 +273,25 @@ async function viewAttend(c) {
   const keep = (n, d, src, box) => { if (!thumb.has(n) || (found.get(n) ?? 9) - d > .03) { const t = crop(src, box); if (t) thumb.set(n, t); } };
   /* پس‌زمینهٔ کادر: ۲۵٪ شفافیت از لبهٔ شروع که تا عرضِ «درصد تطبیق» به ۰ می‌رسد */
   const summary = () => {
-    const miss = c.people.filter(n => !found.has(n));
     $("#sum").textContent = `حاضر: ${fa(found.size)} از ${fa(c.people.length)}`;
-    $("#res").innerHTML = [...found].map(([n, d]) => { const pc = pctOf(d, thr), bg = `linear-gradient(${isEn() ? "to right" : "to left"}, ${pctColor(pc, .25)} 0%, ${pctColor(pc, 0)} ${pc.toFixed(1)}%), var(--card)`; return `<div class="card" style="min-height:52px;cursor:default;background:${bg}">${thumb.has(n) ? `<img src="${thumb.get(n)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none">` : `<div class="avatar" style="width:36px;height:36px">${esc([...n][0])}</div>`}<div class="txt"><div class="t">${esc(n)}</div><div class="s" style="font-weight:700;opacity:.85">تطبیق ${fa(Math.round(pc))}٪</div></div><div class="act"><button class="mini" data-ren="${esc(n)}" aria-label="تغییر نام">${icon("edit")}</button><button class="mini del" data-del="${esc(n)}" aria-label="حذف از فهرست">${icon("trash")}</button></div></div>`; }).join("") +
-      (miss.length ? `<div class="muted">غایب/دیده‌نشده: ${esc(miss.join("، "))}</div>` : "");
+    const CHK = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    const rows = [...found.entries(), ...c.people.filter(n => !found.has(n)).map(n => [n, null])];     // اول حاضرها، بعد غایب‌ها
+    $("#res").innerHTML = rows.map(([n, d]) => {
+      const absent = d === null, pc = absent ? 0 : pctOf(d, thr),
+        bg = absent ? "linear-gradient(rgba(220,38,38,.12),rgba(220,38,38,.12)), var(--card)"
+          : `linear-gradient(${isEn() ? "to right" : "to left"}, ${pctColor(pc, .25)} 0%, ${pctColor(pc, 0)} ${pc.toFixed(1)}%), var(--card)`;
+      const av = thumb.has(n) ? `<img src="${thumb.get(n)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none">` : `<div class="avatar" style="width:36px;height:36px">${esc([...n][0])}</div>`;
+      const act = absent ? `<button class="mini" data-ok="${esc(n)}" aria-label="حاضر" style="color:var(--ok)">${CHK}</button>`
+        : `<button class="mini" data-ren="${esc(n)}" aria-label="تغییر نام">${icon("edit")}</button><button class="mini del" data-del="${esc(n)}" aria-label="غایب">${icon("trash")}</button>`;
+      return `<div class="card" style="min-height:52px;cursor:default;background:${bg}${absent ? ";opacity:.9" : ""}">${av}<div class="txt"><div class="t">${esc(n)}</div><div class="s" style="font-weight:700;opacity:.85">تطبیق ${fa(Math.round(pc))}٪</div></div><div class="act">${act}</div></div>`;
+    }).join("");
   };
   summary();
-  let onDrop = n => {}, onMove = (a, b) => {};                // حالت فعال (زنده یا عکس) این‌ها را تنظیم می‌کند
+  let onDrop = n => {}, onMove = (a, b) => {}, onAdd = n => {};                // حالت فعال (زنده یا عکس) این‌ها را تنظیم می‌کند
   $("#res").onclick = async e => {
-    const d = e.target.closest("[data-del]"), r = e.target.closest("[data-ren]");
-    if (d) { const n = d.dataset.del; found.delete(n); thumb.delete(n); onDrop(n); summary(); toast(`«${n}» از فهرست حاضرین برداشته شد`); }
+    const d = e.target.closest("[data-del]"), r = e.target.closest("[data-ren]"), ok = e.target.closest("[data-ok]");
+    if (d) { const n = d.dataset.del; found.delete(n); thumb.delete(n); onDrop(n); summary(); toast(`«${n}» غایب شد`); }
+    if (ok) { const n = ok.dataset.ok; found.set(n, 0); onAdd(n); summary(); toast(`«${n}» حاضر شد`); }
     if (r) {
       const a = r.dataset.ren, b = await pickPerson(c, a, thumb.get(a)); if (!b || b === a) return;
       const da = found.get(a), db = found.get(b);
@@ -299,7 +308,7 @@ async function viewAttend(c) {
   const modeEl = $("#mode");
   async function camMode() {
     Beep.unlock(); Face.stopCam();
-    onDrop = n => gone.add(n); onMove = (a, b) => { for (const [k, v] of alias) if (v === a) alias.set(k, b); alias.set(a, b); gone.delete(b); }; modeEl.innerHTML = cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button><button class="btn soft" id="clr" style="flex:1">پاک کردن فهرست</button></div><div class="muted" id="st"></div>`;
+    onDrop = n => gone.add(n); onAdd = n => gone.delete(n); onMove = (a, b) => { for (const [k, v] of alias) if (v === a) alias.set(k, b); alias.set(a, b); gone.delete(b); }; modeEl.innerHTML = cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button><button class="btn soft" id="clr" style="flex:1">پاک کردن فهرست</button></div><div class="muted" id="st"></div>`;
     const cm = $("#cm"), vd = $("#vd"), ov = $("#ov"), st = $("#st"); let facing = "environment";
     try { cm.textContent = "در حال بارگذاری…"; await Face.load(prog(cm)); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود"; return; }
     if (!vd.isConnected) return;                           // کاربر در همین حین به حالت «عکس» رفته است
