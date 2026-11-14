@@ -174,7 +174,7 @@ function setTamper(bad) {
     <div dir="ltr" class="muted" style="font-size:12px">${bad.join(" · ")}</div><button class="btn" id="tfix">بازیابی فایل‌ها</button><div id="tmsg" class="muted"></div>`;
   document.getElementById("tfix").onclick = async () => {
     document.getElementById("tmsg").textContent = "در حال دانلود…";
-    try { const c = await caches.open("attendance-files"); for (const n of bad) { const r = await fetch(n + "?i=" + Date.now(), {cache: "reload"}); if (r.ok) await c.put(new Request(n), r); } } catch (e) {}
+    try { const c = await caches.open("attendance-files"), all = new Set([...bad, ...(typeof INTEGRITY !== "undefined" ? Object.keys(INTEGRITY.files) : []), "integrity.js", "version.js", "index.html"]); for (const n of all) { const r = await fetch(n + "?i=" + Date.now(), {cache: "reload"}); if (r.ok) await c.put(new Request(n), r); } } catch (e) {}
     location.reload();
   };
 }
