@@ -181,7 +181,7 @@ function menuHtml() {
   const item = (h, ic, ac, t, s = "") => `<button class="mi${cur(h)}" data-h="${h}"><span class="mico" style="--ac:var(--${ac})">${icon(ic)}</span><span class="mt">${t}${s ? `<small>${s}</small>` : ""}</span></button>`;
   const u = md.on && md.user;
   const pic = u && u.pic ? (/\/webservice\/pluginfile\.php/.test(u.pic) && !/[?&]token=/.test(u.pic) ? u.pic + (u.pic.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(md.token || "") : u.pic) : "";
-  const who = u ? `<div class="mu${pic ? " hasp" : ""}">${pic ? `<img class="mpic" src="${esc(pic)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<div class="mutx"><b>${esc(u.fullname || "")}</b><small>${esc(u.username || "")}</small><small>${esc(u.sitename || "")}</small><small dir="ltr">${esc(u.siteurl || md.url || "")}</small></div></div>` : "";   // مودل قطع: کادر کاربر نیست
+  const who = u ? `<div class="mu${pic ? " hasp" : ""}">${pic ? `<img class="mpic" src="${esc(pic)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<div class="mutx"><b>${esc(u.fullname || "")}</b><small>${esc(u.sitename || "")}</small></div></div>` : "";   // مودل قطع: کادر کاربر نیست
   const cur = h => (location.hash || "#/") === h ? " cur" : "";
   const hp = (location.hash || "#/").replace(/^#\/?/, "").split("/"), cc = hp[0] === "c" ? course(hp[1]) : null, sub = hp[2] || "";
   const tn = (h, ic, ac, t, on, lvl) => `<button class="mi tr tr${lvl}${on ? " cur" : ""}" data-h="${h}"><span class="mico" style="--ac:var(--${ac})">${icon(ic)}</span><span class="mt">${t}</span></button>`;
