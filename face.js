@@ -184,7 +184,7 @@ async function viewEnroll(c, idx) {
     tick();
   };
   $("#shot").onclick = () => last && add(last, vd);
-  $("#flip").onclick = () => { facing = facing === "user" ? "environment" : "user"; run(); };
+  $("#flip").onclick = () => { Beep.unlock(); facing = facing === "user" ? "environment" : "user"; run(); };
   $("#pick").onclick = () => $("#fi").click();
   $("#fi").onchange = async e => {
     const f = e.target.files[0]; if (!f) return; e.target.value = "";
@@ -274,7 +274,7 @@ async function viewAttend(c) {
   };
   const modeEl = $("#mode");
   async function camMode() {
-    Face.stopCam(); modeEl.innerHTML = cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button><button class="btn soft" id="clr" style="flex:1">پاک کردن فهرست</button></div><div class="muted" id="st"></div>`;
+    Beep.unlock(); Face.stopCam(); modeEl.innerHTML = cameraBox() + `<div class="row"><button class="btn soft" id="flip" aria-label="تعویض دوربین">↻</button><button class="btn soft" id="clr" style="flex:1">پاک کردن فهرست</button></div><div class="muted" id="st"></div>`;
     const cm = $("#cm"), vd = $("#vd"), ov = $("#ov"), st = $("#st"); let facing = "environment";
     try { cm.textContent = "در حال بارگذاری…"; await Face.load(prog(cm)); } catch (e) { cm.textContent = "بارگذاری مدل‌ها ناموفق بود"; return; }
     if (!vd.isConnected) return;                           // کاربر در همین حین به حالت «عکس» رفته است
@@ -287,8 +287,9 @@ async function viewAttend(c) {
         const t0 = performance.now();
         try {
           const r = await Face.detect(vd, false); if (token !== Face.loop) return;
-          const items = r.map(x => { const m = Face.match(x.descriptor, gal, thr); if (m.name && (!found.has(m.name) || found.get(m.name) > m.dist)) found.set(m.name, m.dist); return {box: x.detection.box, label: m.name || "؟", ok: !!m.name}; });
-          drawBoxes(ov, vd.videoWidth, vd.videoHeight, items); summary();
+          let fresh = 0;
+          const items = r.map(x => { const m = Face.match(x.descriptor, gal, thr); if (m.name && !found.has(m.name)) fresh++; if (m.name && (!found.has(m.name) || found.get(m.name) > m.dist)) found.set(m.name, m.dist); return {box: x.detection.box, label: m.name || "؟", ok: !!m.name}; });
+          drawBoxes(ov, vd.videoWidth, vd.videoHeight, items); summary(); if (fresh) Beep.tick(fresh);
           st.textContent = `${fa(r.length)} چهره · ${fa(Math.round(performance.now() - t0))} میلی‌ثانیه`;
         } catch (e) {}
         setTimeout(tick, VP("live_ms"));
@@ -452,3 +453,17 @@ function scanPanel(c, host, mode, onChange) {
     run();
   })();
 }
+
+/* صدای کوتاه «تیک» وقتی فردی در دوربین زنده تازه شناسایی شد (WebAudio؛ بدون فایل صوتی) */
+const Beep = {ctx: null, last: 0,
+  unlock() { try { this.ctx = this.ctx || new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === "suspended") this.ctx.resume(); } catch (e) {} },
+  tick(n = 1) {
+    if (S.settings?.beep === false) return;
+    const c = this.ctx; if (!c || c.state !== "running" || Date.now() - this.last < 350) return; this.last = Date.now();
+    const t = c.currentTime;
+    [[1046, 0], [1568, .09]].forEach(([fr, d]) => {                  // دو نت کوتاه بالا رونده (مثل تیک تأیید)
+      const o = c.createOscillator(), g = c.createGain(); o.type = "sine"; o.frequency.value = fr;
+      g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.25, t + d + .01); g.gain.exponentialRampToValueAtTime(.001, t + d + .16);
+      o.connect(g); g.connect(c.destination); o.start(t + d); o.stop(t + d + .18);
+    });
+  }};

@@ -1,11 +1,11 @@
 "use strict";
 /* تنظیمات برنامه: تم‌ها، ظاهر، حالت افقی، پارامترهای شناسایی چهره، پشتیبان‌گیری */
-const DEFAULTS = {theme: "system", lang: "fa", landCharts: false, cal: "jalali", limit: 6, landCols: 2, undoK: 1, nameW: 140, vp: {},
+const DEFAULTS = {theme: "system", lang: "fa", landCharts: false, beep: true, cal: "jalali", limit: 6, landCols: 2, undoK: 1, nameW: 140, vp: {},
   md: {on: false, url: "", token: "", service: "moodle_mobile_app", proxy: "", user: null}};
 function normSettings() {
   const old = S.settings || {};
   S.settings = Object.assign({}, DEFAULTS, old, {vp: Object.assign({}, old.vp), md: Object.assign({}, DEFAULTS.md, old.md)});
-  S.settings.lang = S.settings.lang === "en" ? "en" : "fa"; S.settings.landCharts = !!S.settings.landCharts;
+  S.settings.lang = S.settings.lang === "en" ? "en" : "fa"; S.settings.landCharts = !!S.settings.landCharts; S.settings.beep = S.settings.beep !== false;
   if (!["system", "dark", "black", "light"].includes(S.settings.theme)) S.settings.theme = "system";
   document.documentElement.style.setProperty("--lc", S.settings.landCols);
 }
@@ -107,6 +107,7 @@ function viewSettings() {
   root.appendChild(sec("ظاهر", chipsEl([["dark", "تیره"], ["black", "سیاه"], ["light", "روشن"], ["system", "سیستم"]], s.theme,
     k => { s.theme = k; applyTheme(); redo(); })));
   root.appendChild(sec("زبان", chipsEl([["fa", "فارسی"], ["en", "English"]], s.lang, k => { s.lang = k; save(); applyLang(); route(); })));
+  root.appendChild(sec("صدای تیک هنگام شناسایی در دوربین زنده", chipsEl([["1", "با صدا"], ["0", "بی‌صدا"]], s.beep ? "1" : "0", k => { s.beep = k === "1"; if (s.beep) Beep.unlock(), Beep.tick(); redo(); })));
   root.appendChild(sec("تقویم", chipsEl([["jalali", "شمسی"], ["gregorian", "میلادی"]], s.cal, k => { s.cal = k; redo(); })));
   root.appendChild(sec("حد مجاز غیبت (بعد از آن ردیف قرمز می‌شود)", sliderRow(s.limit, 3, 8, 1, null, v => { s.limit = v; save(); })));
   root.appendChild(sec("تعداد ستون اجزای صفحه در حالت افقی", sliderRow(s.landCols, 1, 4, 1,
