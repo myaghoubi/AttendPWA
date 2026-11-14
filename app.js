@@ -16,6 +16,8 @@ Object.assign(IC, {
   sliders: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
   scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="2.5"/><path d="M7.5 17c.8-2.3 2.4-3.3 4.5-3.3s3.7 1 4.5 3.3"/>',
   cap: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c3 2.5 9 2.5 12 0v-4.5M22 9v6"/>',
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M16 5.2a3 3 0 0 1 0 5.6M18 14c2 .6 3.2 2.4 3.2 5"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
   book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
   down: '<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
@@ -178,13 +180,20 @@ function menuHtml() {
     return `<span class="ring" style="--p:${Math.round(rem / HOLD * 360)}deg"><i>${fa(m)}</i></span>`; };
   const item = (h, ic, ac, t, s = "") => `<button class="mi${cur(h)}" data-h="${h}"><span class="mico" style="--ac:var(--${ac})">${icon(ic)}</span><span class="mt">${t}${s ? `<small>${s}</small>` : ""}</span></button>`;
   const u = md.on && md.user;
-  const who = u ? `<div class="mu"><b>${esc(u.fullname || "")}</b><small>${esc(u.username || "")}</small><small>${esc(u.sitename || "")}</small><small dir="ltr">${esc(u.siteurl || md.url || "")}</small></div>`
-    : `<div class="mu off"><small>مودل آفلاین</small></div>`;
+  const who = u ? `<div class="mu"><b>${esc(u.fullname || "")}</b><small>${esc(u.username || "")}</small><small>${esc(u.sitename || "")}</small><small dir="ltr">${esc(u.siteurl || md.url || "")}</small></div>` : "";   // مودل قطع: کادر کاربر نیست
   const cur = h => (location.hash || "#/") === h ? " cur" : "";
+  const hp = (location.hash || "#/").replace(/^#\/?/, "").split("/"), cc = hp[0] === "c" ? course(hp[1]) : null, sub = hp[2] || "";
+  const tn = (h, ic, ac, t, on, lvl) => `<button class="mi tr tr${lvl}${on ? " cur" : ""}" data-h="${h}"><span class="mico" style="--ac:var(--${ac})">${icon(ic)}</span><span class="mt">${t}</span></button>`;
+  const tree = cc ? `<div class="tree">${tn("#/c/" + cc.id, "book", cc.acc, esc(cc.name), !sub, 1)}<div class="tree">`
+    + tn(`#/c/${cc.id}/people`, "users", "primary", "تعریف افراد", sub === "people" || sub === "face", 2)
+    + tn(`#/c/${cc.id}/attend`, "cam", "ok", "حضور و غیاب", sub === "attend", 2)
+    + tn(`#/c/${cc.id}/records`, "list", "warn", "سوابق حضور", sub === "records", 2)
+    + (mdReady() ? tn(`#/moodle/sync/${cc.id}`, "sync", "primary", "همگام‌سازی با مودل", false, 2) : "") + `</div></div>` : "";
   dr.innerHTML = `<div class="scrim"></div><nav>
-    <div class="nh">حضور و غیاب</div>${who}<div class="hr"></div>
+    <div class="nh">حضور و غیاب تصویری</div>${who}${who ? `<div class="hr"></div>` : ""}
+    ${item("#/", "book", "primary", "فهرست دروس من")}${tree}<div class="hr"></div>
     ${item("#/settings", "sliders", "primary", "تنظیمات برنامه")}${item("#/vision", "scan", "ok", "شناسایی چهره")}${item("#/moodle", "cap", "warn", "تنظیمات اتصال به مودل")}
-    ${item("#/", "book", "primary", "فهرست دروس من")}${item("#/settings", "down", "ok", "پشتیبان‌گیری و بازیابی از فایل")}
+    ${item("#/settings", "down", "ok", "پشتیبان‌گیری و بازیابی از فایل")}
     ${left.length ? `<div class="section">بازیابی</div>` + left.map(e => `<button class="mi" data-r="${e.id}"><span class="mico" style="--ac:var(--danger)">${icon("undo")}</span><span class="mt">برگردان ${KIND[e.kind]}<small>${esc(e.label)}</small></span>${ring(e)}</button>`).join("") : ""}
     <div class="hr"></div>${item("#/activate", "key", licensed() ? "ok" : "warn", licensed() ? "برنامه فعال است ✓" : "فعال‌سازی برنامه")}${licensed() ? item("#/reseller", "bag", "primary", "همکاری در فروش") : ""}${item("#/about", "info", "primary", "درباره ما")}<button class="mi" id="mexit"><span class="mico" style="--ac:var(--danger)">${icon("exit")}</span><span class="mt">خروج</span></button>
     </nav>`;
