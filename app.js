@@ -200,11 +200,19 @@ async function exitApp() {
   setTimeout(() => toast("این دستگاه خروج از برنامه را نمی‌پذیرد؛ برنامه را از فهرست برنامه‌های اخیر ببند"), 400);
 }
 const isLand = () => matchMedia("(orientation:landscape)").matches;
-function openMenu() { menuHtml(); document.documentElement.style.setProperty("--bh", bar.offsetHeight + "px"); $("#drawer").classList.add("open"); document.body.classList.add("menu-open"); $("#mn")?.classList.add("open"); }
+function openMenu() { menuHtml(); document.documentElement.style.setProperty("--bh", bar.offsetHeight + "px"); $("#drawer").classList.add("open"); document.body.classList.add("menu-open");
+  const mn = $("#mn"), dr = $("#drawer"); dr.querySelector(".hamx")?.remove();
+  if (mn && !isLand()) {                                // ضربدر بالای منو، دقیقاً جای دکمهٔ همبرگری
+    const r = mn.getBoundingClientRect(), x = document.createElement("button");
+    x.className = "hamx"; x.setAttribute("aria-label", "بستن منو"); x.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
+    x.innerHTML = mn.innerHTML; x.onclick = closeMenu; dr.appendChild(x);
+    requestAnimationFrame(() => requestAnimationFrame(() => x.classList.add("open")));
+  } else mn?.classList.add("open");
+}
 function renderDock() { if (isLand()) menuHtml(); }          // حالت افقی: منو همیشه سمت راست قفل است
 matchMedia("(orientation:landscape)").addEventListener?.("change", () => { closeMenu(); if (isLand()) menuHtml(); if (/^(#\/?|#\/c\/[^/]+)$/.test(location.hash)) route(); });
 setInterval(() => { if (isLand() && !document.hidden) menuHtml(); }, 30000);
-function closeMenu() { $("#drawer").classList.remove("open"); document.body.classList.remove("menu-open"); $("#mn")?.classList.remove("open"); }
+function closeMenu() { $("#drawer").classList.remove("open"); document.body.classList.remove("menu-open"); $("#mn")?.classList.remove("open"); const x = $("#drawer .hamx"); if (x) { x.classList.remove("open"); setTimeout(() => x.remove(), 280); } }
 
 /* ---------- دروس ---------- */
 const chartsOn = () => !isLand() || S.settings.landCharts;               // عمودی: همیشه؛ افقی: فقط وقتی کلید نمودار روشن است
@@ -295,7 +303,7 @@ const relNote = r => (isEn() ? r.en : r.fa) || "";
 function viewAbout() {
   setBar("درباره ما", {back: "#/"});
   const cur = RELEASES[0];
-  show(`<div class="about"><img id="lg" src="icons/icon-192.png" alt="" width="96" height="96" style="-webkit-tap-highlight-color:transparent;user-select:none">
+  show(`<div class="about">${logoHtml(96)}
     <h2>سامانه حضور و غیاب تصویری</h2>
     <p class="muted">ایده‌پردازی و طراحی در پژوهشکدهٔ هوش مصنوعی دانشگاه گلستان</p><p class="muted">آبان ۱۴۰۵</p>
     <div id="dev" hidden><div class="vcard" style="text-align:center"><b>درباره توسعه‌دهنده</b><div>مهدی یعقوبی</div><div class="muted">گروه مهندسی کامپیوتر</div><div class="muted">دانشگاه گلستان</div>
@@ -307,7 +315,7 @@ function viewAbout() {
       <button class="btn" id="up">بررسی بروزرسانی</button><div id="us" class="muted"></div>
       <details><summary>تاریخچهٔ نسخه‌ها</summary>${RELEASES.map(r => `<div class="rel"><b dir="ltr">${esc(r.v)}</b> <span class="muted" dir="ltr">${esc(r.date)}</span>
         <div class="muted">${esc(relNote(r))}</div><div class="fl" dir="ltr">${r.files.map(esc).join(" · ")}</div></div>`).join("")}</details></div></div>`);
-  $("#up").onclick = checkUpdate;
+  $("#up").onclick = checkUpdate; logoPlay($("#lg"));
   $("#qrb").onclick = showQr;
   let taps = 0, tt = 0;                                  // ۷ بار لمس لوگو: اطلاعات توسعه‌دهنده
   $("#lg").onclick = () => {

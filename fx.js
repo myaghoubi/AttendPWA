@@ -65,3 +65,39 @@ function fxRemove(el) {
     {duration: 360, easing: "ease-in-out", fill: "forwards"});
   return new Promise(r => { a.onfinish = r; a.oncancel = r; setTimeout(r, 600); });
 }
+/* لوگوی برنامه (مثل برنامهٔ اصلی): قاب‌ها بسته و باز می‌شوند، نشان سبز ظاهر و تیک کشیده می‌شود */
+function logoHtml(size) {
+  const br = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(() => `<path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`).join("");
+  return `<svg id="lg" class="applogo" viewBox="0 0 100 100" width="${size}" height="${size}" style="overflow:visible;-webkit-tap-highlight-color:transparent;user-select:none">
+    <rect width="100" height="100" rx="20" fill="var(--primary)"/>${br}
+    <circle cx="50" cy="38" r="12" fill="#fff"/><path d="M31 78V73Q31 54 50 54Q69 54 69 73V78Z" fill="#fff"/>
+    <circle class="lb" cx="80" cy="20" r="0" fill="var(--ok)"/><path class="lc" d="M71 20L78 27.6L90 12.8" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg>`;
+}
+function logoPlay(svg) {
+  if (!svg) return;
+  const set = (k, badge, chk, op) => {
+    svg.style.opacity = op;
+    svg.querySelectorAll("path[fill=none]:not(.lc)").forEach((p, i) => {
+      const [sx, sy] = [[-1, -1], [1, -1], [-1, 1], [1, 1]][i], half = 35 * k, ln = 17, cx = 50 + half * sx, cy = 50 + half * sy;
+      p.setAttribute("d", `M${cx - sx * ln} ${cy}L${cx} ${cy}L${cx} ${cy - sy * ln}`);
+    });
+    svg.querySelector(".lb").setAttribute("r", 20 * badge);
+    svg.querySelector(".lc").style.strokeDashoffset = 1 - chk;
+  };
+  const seg = [[.35, "op", 0, 1, 1.3, 1.3], [.35, "k", 1.3, .85], [.3, "k", .85, 1.12], [.2, "k", 1.12, 1.0], [.3, "b", 0, 1], [.3, "c", 0, 1]];
+  const ease = (t, m) => m === "in" ? t * t * (3 - 2 * t) : 1 - (1 - t) * (1 - t);       // نرم برای k، خروج برای بقیه
+  if (matchMedia("(prefers-reduced-motion:reduce)").matches) return set(1, 1, 1, 1);
+  const total = seg.reduce((s, x) => s + x[0], 0) * 1000, t0 = performance.now();
+  svg._run = (svg._run || 0) + 1; const my = svg._run;
+  const frame = now => {
+    if (svg._run !== my || !svg.isConnected) return;
+    let t = Math.min((now - t0) / 1000, total / 1000), k = 1.3, b = 0, c = 0, op = 0, acc = 0;
+    seg.forEach(([d, n, a, z]) => {
+      const f = Math.max(0, Math.min(1, (t - acc) / d)); acc += d;
+      if (n === "op") op = ease(f, "out"); else if (n === "k" && f > 0) k = a + (z - a) * ease(f, "in"); else if (n === "b") b = ease(f, "out"); else if (n === "c") c = ease(f, "out");
+    });
+    set(k, b, c, op);
+    if (t < total / 1000) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}

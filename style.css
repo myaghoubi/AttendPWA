@@ -254,10 +254,15 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 /* دکمهٔ همبرگری: سه خط به ضربدر تبدیل می‌شود (مثل برنامهٔ اصلی) و منو زیر نوار باز می‌شود */
 .ham path{transform-box:fill-box;transform-origin:center;transition:transform .25s cubic-bezier(.33,1,.68,1),opacity .15s}
-#mn.open .ham path:nth-child(1){transform:translateY(5px) rotate(45deg)}
-#mn.open .ham path:nth-child(2){transform:scaleX(0);opacity:0}
-#mn.open .ham path:nth-child(3){transform:translateY(-5px) rotate(-45deg)}
+#mn.open .ham path:nth-child(1),.hamx.open .ham path:nth-child(1){transform:translateY(5px) rotate(45deg)}
+#mn.open .ham path:nth-child(2),.hamx.open .ham path:nth-child(2){transform:scaleX(0);opacity:0}
+#mn.open .ham path:nth-child(3),.hamx.open .ham path:nth-child(3){transform:translateY(-5px) rotate(-45deg)}
+/* منو از بالا و روی نوار می‌آید؛ دکمهٔ ضربدر روی منو می‌ماند */
 @media (orientation:portrait){
-  body.menu-open #bar{z-index:31}
-  #drawer nav{padding-top:calc(var(--bh,56px) + 8px)}
+  #drawer nav,[dir=ltr] #drawer nav{bottom:auto;max-height:100dvh;border-radius:0 0 20px 20px;transform:translateY(-104%);transition:transform .28s cubic-bezier(.33,1,.68,1);
+    padding-top:calc(var(--bh,56px) + 8px);box-shadow:0 10px 30px rgba(0,0,0,.3)}
+  #drawer.open nav,[dir=ltr] #drawer.open nav{transform:none}
+  #drawer .hamx{position:fixed;z-index:2;width:42px;height:42px;border:0;border-radius:50%;background:color-mix(in srgb,var(--text) 10%,var(--card));color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  #drawer .hamx svg{width:24px;height:24px}
 }
+
