@@ -312,3 +312,10 @@ html{direction:rtl}html[dir=ltr]{direction:ltr}
   .setgrid,#lst,#unk{display:grid;grid-template-columns:repeat(var(--lc,1),minmax(0,1fr));gap:10px;align-items:start}
   .setgrid>.full,.setgrid>.gh{grid-column:1/-1}
 }
+
+/* شمارهٔ نسخه در نوار بالا (افقی) و چشمک وقتی نسخهٔ جدید هست */
+.verb{border:0;background:color-mix(in srgb,currentColor 14%,transparent);color:inherit;font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;cursor:pointer;align-self:center}
+@media (orientation:landscape){.verb.land-only{display:inline-block}}
+.verb.blink{animation:vblink 1s ease-in-out infinite}
+@keyframes vblink{0%,100%{box-shadow:0 0 0 0 rgba(255,193,7,0);background:color-mix(in srgb,currentColor 14%,transparent)}50%{box-shadow:0 0 0 4px rgba(255,193,7,.85);background:rgba(255,193,7,.35)}}
+@media (prefers-reduced-motion:reduce){.verb.blink{animation:none;box-shadow:0 0 0 3px rgba(255,193,7,.9)}}

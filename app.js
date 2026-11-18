@@ -226,9 +226,20 @@ setInterval(() => { if (isLand() && !document.hidden) menuHtml(); }, 30000);
 function closeMenu() { $("#drawer").classList.remove("open"); document.body.classList.remove("menu-open"); $("#mn")?.classList.remove("open"); const x = $("#drawer .hamx"); if (x) { x.classList.remove("open"); setTimeout(() => x.remove(), 280); } }
 
 /* ---------- دروس ---------- */
-const chartsOn = () => !isLand() || S.settings.landCharts;               // عمودی: همیشه؛ افقی: فقط وقتی کلید نمودار روشن است
-const chartBtn = () => `<button class="ib land-only${S.settings.landCharts ? " on" : ""}" id="cht" aria-label="نمودار">${icon("chart")}</button>`;
-function bindChartBtn() { const b = $("#cht"); if (b) b.onclick = () => { S.settings.landCharts = !S.settings.landCharts; save(); route(); }; }
+const chartsOn = () => true;                                              // نمودار همیشه دیده می‌شود (عمودی و افقی)
+/* به‌جای کلید نمودار: شمارهٔ نسخه در نوار بالا (فقط افقی)؛ اگر نسخهٔ جدید روی سرور باشد چشمک می‌زند و با لمس به «دربارهٔ برنامه» می‌رود */
+const chartBtn = () => `<button class="land-only verb${window.NEWV ? " blink" : ""}" id="vb" aria-label="نسخه" dir="ltr">v${esc(APP_VERSION)}</button>`;
+function bindChartBtn() { const b = $("#vb"); if (b) b.onclick = () => go("#/about"); }
+async function checkNewVersion() {
+  try {
+    const t = await (await fetch("version.js?t=" + Date.now(), {cache: "no-store"})).text();
+    const v = new Function(t + ";return APP_VERSION;")();
+    window.NEWV = v !== APP_VERSION ? v : null;
+    document.querySelectorAll("#vb").forEach(b => b.classList.toggle("blink", !!window.NEWV));
+  } catch (e) {}
+}
+checkNewVersion(); setInterval(checkNewVersion, 30 * 60 * 1000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkNewVersion(); });
 function coursesChart() {
   if (!S.courses.length) return "";
   const st = S.courses.map(c => [c.people.length, (c.sessions || []).length]), mx = Math.max(1, ...st.map(x => x[0]));
