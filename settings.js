@@ -126,8 +126,22 @@ function viewSettings() {
     v => { s.landCols = v; applyCols(); }, v => { s.landCols = v; save(); applyCols(); })));
   root.appendChild(sec("تعداد مراحل برگرداندن حذف (۰ تا ۵؛ صفر یعنی خاموش)", sliderRow(s.undoK, 0, 5, 1, null, v => { s.undoK = v; save(); trashPurge(); })));
   const nav = (t, h) => { const b = document.createElement("button"); b.className = "btn soft"; b.textContent = t; b.onclick = () => go(h); return b; };
-  root.appendChild(sec("بخش‌ها", nav("شناسایی و پردازش چهره", "#/vision"), nav("اتصال به مودل", "#/moodle")));
+  root.appendChild(sec("بخش‌ها", nav("شناسایی و پردازش چهره", "#/vision"), nav("اتصال به مودل", "#/moodle"), nav("پشتیبان‌گیری و بازیابی", "#/backup")));
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone;
+  const ins = document.createElement("div"); ins.className = "setsec";
+  ins.innerHTML = `<div class="section">نصب برنامه</div>` + (deferredInstall ? `<button class="btn" id="inst">نصب روی این دستگاه</button>` :
+    ios ? `<div class="muted">در آیفون: دکمهٔ اشتراک‌گذاری Safari ← «Add to Home Screen».</div>` :
+    `<div class="muted">از منوی مرورگر گزینهٔ «نصب برنامه» یا «Add to Home screen» را بزن.</div>`);
+  root.appendChild(ins);
+  show(""); page.appendChild(root);
+  if (deferredInstall) $("#inst").onclick = async () => { deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; viewSettings(); };
+}
+
+
+/* ---------- صفحهٔ پشتیبان‌گیری و بازیابی (مستقل از تنظیمات) ---------- */
+function viewBackup() {
+  setBar("پشتیبان‌گیری و بازیابی", {back: "#/"});
+  const root = document.createElement("div"); root.className = "setgrid";
   const bk = document.createElement("div"); bk.className = "setsec";
   bk.innerHTML = `<div class="section">پشتیبان‌گیری</div>
     <div class="muted">داده‌ها فقط روی همین دستگاه ذخیره می‌شوند. فایل پشتیبان شامل توکن مودل هم هست؛ آن را جای امن نگه دار.</div>
@@ -135,11 +149,6 @@ function viewSettings() {
     <input type="file" id="fi" accept="application/json,.json" hidden>`;
   root.appendChild(bk);
   root.appendChild(offlineSec());
-  const ins = document.createElement("div"); ins.className = "setsec";
-  ins.innerHTML = `<div class="section">نصب برنامه</div>` + (deferredInstall ? `<button class="btn" id="inst">نصب روی این دستگاه</button>` :
-    ios ? `<div class="muted">در آیفون: دکمهٔ اشتراک‌گذاری Safari ← «Add to Home Screen».</div>` :
-    `<div class="muted">از منوی مرورگر گزینهٔ «نصب برنامه» یا «Add to Home screen» را بزن.</div>`);
-  root.appendChild(ins);
   show(""); page.appendChild(root);
   $("#ex").onclick = () => {
     const a = document.createElement("a");
@@ -158,7 +167,6 @@ function viewSettings() {
       S = {v: 1, ...d}; normSettings(); save(); applyTheme(); applyLang(); toast("بازیابی شد"); go("#/");
     } catch (_) { toast("فایل پشتیبان معتبر نیست"); }
   };
-  if (deferredInstall) $("#inst").onclick = async () => { deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; viewSettings(); };
 }
 
 /* ---------- صفحهٔ شناسایی و پردازش چهره ---------- */

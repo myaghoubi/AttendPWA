@@ -333,3 +333,16 @@ html{direction:rtl}html[dir=ltr]{direction:ltr}
 .mi.grp{width:100%}.mi.grp .chev{margin-inline-start:auto;transition:transform .2s;opacity:.7;flex:none}
 .mi.grp.open .chev{transform:rotate(180deg)}
 .tree[hidden]{display:none}
+
+/* لینک‌ها هم‌رنگ تم (آبی پیش‌فرض مرورگر در تم تیره دیده نمی‌شد) */
+a:not(.btn){color:var(--primary);text-decoration:underline;text-underline-offset:3px}
+a:not(.btn):visited{color:var(--primary)}
+/* راهنما */
+.guide{display:flex;flex-direction:column;gap:10px}
+.gd{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:2px 14px}
+.gd summary{cursor:pointer;font-weight:700;padding:12px 0;list-style:none;display:flex;align-items:center;justify-content:space-between}
+.gd summary::-webkit-details-marker{display:none}
+.gd summary::after{content:"";width:8px;height:8px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .2s;opacity:.6;margin-inline-start:10px}
+.gd[open] summary::after{transform:rotate(-135deg)}
+.gd ul{margin:0 0 12px;padding-inline-start:20px;line-height:1.9;font-size:15px}
+.gd li{margin-bottom:4px}

@@ -20,6 +20,7 @@ Object.assign(IC, {
   list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
   book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
   down: '<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8M12 17v.5"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   undo: '<path d="M4 9h10a5 5 0 0 1 0 10H8M4 9l4-4M4 9l4 4"/>',
 });
@@ -139,6 +140,8 @@ function route() {
   if (p[0] === "settings") return viewSettings();
   if (p[0] === "vision") return viewVision();
   if (p[0] === "about") return viewAbout();
+  if (p[0] === "guide") return viewGuide();
+  if (p[0] === "backup") return viewBackup();
   if (p[0] === "moodle") return p[1] === "sync" ? viewMdSync(p[2], p[3]) : viewMoodle();
   return viewCourses();
 }
@@ -198,9 +201,9 @@ function menuHtml() {
     <div class="nh">حضور و غیاب تصویری</div>${who}${who ? `<div class="hr"></div>` : ""}
     ${item("#/", "book", "primary", "فهرست دروس من")}${tree}<div class="hr"></div>
     ${setGroup}
-    ${item("#/settings", "down", "ok", "پشتیبان‌گیری و بازیابی از فایل")}
+    ${item("#/backup", "down", "ok", "پشتیبان‌گیری و بازیابی")}
     ${left.length ? `<div class="section">بازیابی</div>` + left.map(e => `<button class="mi" data-r="${e.id}"><span class="mico" style="--ac:var(--danger)">${icon("undo")}</span><span class="mt">برگردان ${KIND[e.kind]}<small>${esc(e.label)}</small></span>${ring(e)}</button>`).join("") : ""}
-    <div class="hr"></div>${item("#/activate", "key", licensed() ? "ok" : "warn", licensed() ? "برنامه فعال است ✓" : "فعال‌سازی برنامه")}${licensed() ? item("#/reseller", "bag", "primary", "همکاری در فروش") : ""}${item("#/about", "info", "primary", "درباره ما")}<button class="mi" id="mexit"><span class="mico" style="--ac:var(--danger)">${icon("exit")}</span><span class="mt">خروج</span></button>
+    <div class="hr"></div>${item("#/activate", "key", licensed() ? "ok" : "warn", licensed() ? "برنامه فعال است ✓" : "فعال‌سازی برنامه")}${licensed() ? item("#/reseller", "bag", "primary", "همکاری در فروش") : ""}${item("#/guide", "help", "ok", "راهنمای استفاده")}${item("#/about", "info", "primary", "درباره ما")}<button class="mi" id="mexit"><span class="mico" style="--ac:var(--danger)">${icon("exit")}</span><span class="mt">خروج</span></button>
     </nav>`;
   dr.querySelector(".scrim").onclick = closeMenu;
   dr.querySelector("#mexit").onclick = exitApp;
