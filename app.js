@@ -120,7 +120,7 @@ function setBar(title, {back, sub, right = "", acc} = {}) {
   $("#mn").onclick = () => $("#drawer").classList.contains("open") ? closeMenu() : openMenu();
   $("#mn").classList.toggle("open", $("#drawer").classList.contains("open"));
 }
-function show(html) { applyCols(); page.innerHTML = html; page.classList.remove("page-in"); void page.offsetWidth; page.classList.add("page-in"); window.scrollTo(0, 0); document.body.scrollTop = 0; }
+function show(html) { applyCols(); page.innerHTML = html + verFoot(); page.classList.remove("page-in"); void page.offsetWidth; page.classList.add("page-in"); window.scrollTo(0, 0); document.body.scrollTop = 0; }
 const course = id => S.courses.find(c => c.id === id);
 
 function route() {
@@ -227,19 +227,21 @@ function closeMenu() { $("#drawer").classList.remove("open"); document.body.clas
 
 /* ---------- دروس ---------- */
 const chartsOn = () => true;                                              // نمودار همیشه دیده می‌شود (عمودی و افقی)
-/* به‌جای کلید نمودار: شمارهٔ نسخه در نوار بالا (فقط افقی)؛ اگر نسخهٔ جدید روی سرور باشد چشمک می‌زند و با لمس به «دربارهٔ برنامه» می‌رود */
-const chartBtn = () => `<button class="land-only verb${window.NEWV ? " blink" : ""}" id="vb" aria-label="نسخه" dir="ltr">v${esc(APP_VERSION)}</button>`;
-function bindChartBtn() { const b = $("#vb"); if (b) b.onclick = () => go("#/about"); }
+/* شمارهٔ نسخه: پایین صفحه، وسط‌چین و ریز؛ اگر نسخهٔ جدید روی سرور باشد چشمک می‌زند و دکمهٔ ریز «بروزرسانی» کنارش می‌آید */
+const chartBtn = () => "";                                                 // کلید نمودار و نسخه از نوار بالا برداشته شد
+function bindChartBtn() {}
+const verFoot = () => `<div id="vf" class="vfoot"><span class="vtxt${window.NEWV ? " blink" : ""}" dir="ltr">v${esc(APP_VERSION)}</span>${window.NEWV ? `<button class="vup" id="vup">بروزرسانی به <span dir="ltr">${esc(window.NEWV)}</span></button>` : ""}</div>`;
+document.addEventListener("click", e => { if (e.target.closest("#vup")) { window.AUTOUPD = 1; go("#/about"); } });
 async function checkNewVersion() {
   try {
     const t = await (await fetch("version.js?t=" + Date.now(), {cache: "no-store"})).text();
     const v = new Function(t + ";return APP_VERSION;")();
     window.NEWV = v !== APP_VERSION ? v : null;
-    document.querySelectorAll("#vb").forEach(b => b.classList.toggle("blink", !!window.NEWV));
+    const f = document.getElementById("vf"); if (f) f.outerHTML = verFoot();
   } catch (e) {}
 }
 if (typeof keepStorage === "function") keepStorage();
-checkNewVersion(); setInterval(checkNewVersion, 30 * 60 * 1000);
+checkNewVersion(); setInterval(checkNewVersion, 2 * 60 * 1000);          // هر ۲ دقیقه (فقط فایل کوچک version.js)
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkNewVersion(); });
 function coursesChart() {
   if (!S.courses.length) return "";
@@ -339,6 +341,7 @@ function viewAbout() {
       <details><summary>تاریخچهٔ نسخه‌ها</summary>${RELEASES.map(r => `<div class="rel"><b dir="ltr">${esc(r.v)}</b> <span class="muted" dir="ltr">${esc(r.date)}</span>
         <div class="muted">${esc(relNote(r))}</div><div class="fl" dir="ltr">${r.files.map(esc).join(" · ")}</div></div>`).join("")}</details></div></div>`);
   $("#up").onclick = checkUpdate; logoPlay($("#lg"));
+  if (window.AUTOUPD) { window.AUTOUPD = 0; checkUpdate(); }
   $("#qrb").onclick = showQr;
   let taps = 0, tt = 0;                                  // ۷ بار لمس لوگو: اطلاعات توسعه‌دهنده
   $("#lg").onclick = () => {
@@ -350,8 +353,10 @@ async function checkUpdate() {
   const us = $("#us"), up = $("#up"); us.textContent = "در حال بررسی…"; up.disabled = true;
   let R;
   try {
-    const t = await (await fetch("version.js?t=" + Date.now(), {cache: "no-store"})).text();
-    R = new Function(t + ";return {v: APP_VERSION, rel: RELEASES, all: APP_FILES};")();
+    const q = "?t=" + Date.now(), t = await (await fetch("version.js" + q, {cache: "no-store"})).text();
+    const v = new Function(t + ";return APP_VERSION;")();
+    const t2 = v === APP_VERSION ? "" : await (await fetch("releases.js" + q, {cache: "no-store"})).text();           // تاریخچه فقط وقتی نسخهٔ جدید هست
+    R = new Function(t2 + ";return {v: " + JSON.stringify(v) + ", rel: typeof RELEASES !== 'undefined' ? RELEASES : [], all: typeof APP_FILES !== 'undefined' ? APP_FILES : []};")();
   } catch (e) { us.textContent = "آفلاین یا سرور در دسترس نیست"; up.disabled = false; return; }
   up.disabled = false;
   if (R.v === APP_VERSION) { us.textContent = "نسخهٔ شما به‌روز است"; return; }
