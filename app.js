@@ -268,12 +268,12 @@ function viewCourses() {
   if ($("#msy")) $("#msy").onclick = () => go("#/moodle/sync/courses");
   $("#add").onclick = newCourse; bindChartBtn();
   show((chartsOn() ? coursesChart() : "") + (S.courses.length ? S.courses.map(c => `
-    <div class="card" data-id="${c.id}" style="--accent:var(--${c.acc})">
+    <div class="sw" data-id="${c.id}" style="--accent:var(--${c.acc})"><div class="card" data-id="${c.id}">
       <div class="stripe"></div>
       <div class="txt"><div class="t">${esc(c.name)}</div><div class="s">${fa(c.people.length)} نفر</div></div>
       <div class="act"><button class="mini" data-a="ren" aria-label="ویرایش نام">${icon("edit")}</button>
       <button class="mini del" data-a="del" aria-label="حذف">${icon("trash")}</button></div>
-    </div>`).join("") : `<div class="empty">هنوز درسی نیست.<br>با دکمهٔ + بالای صفحه یک درس بساز.</div>`));
+    </div></div>`).join("") : `<div class="empty">هنوز درسی نیست.<br>با دکمهٔ + بالای صفحه یک درس بساز.</div>`));
   page.querySelectorAll(".card").forEach(el => el.onclick = async e => {
     const id = el.dataset.id, a = e.target.closest("[data-a]")?.dataset.a;
     if (a === "ren") return renameCourse(course(id));
@@ -293,8 +293,9 @@ async function renameCourse(c) {
 }
 async function delCourse(c) {
   if (!await ask({title: "حذف درس", text: `درس «${c.name}» با همهٔ افرادش حذف شود؟`, ok: "حذف", danger: true})) return;
-  const i = S.courses.indexOf(c);
-  await fxRemove(page.querySelector(`.card[data-id="${c.id}"]`));
+  const i = S.courses.indexOf(c), sw = page.querySelector(`.sw[data-id="${c.id}"]`);
+  if (sw) { sw.querySelector(".card").style.transform = ""; sw.querySelector(".rv")?.remove(); }
+  await fxRemove(page.querySelector(`.sw[data-id="${c.id}"]`));
   S.courses.splice(i, 1); trashAdd("course", c.name, {c, i}); route();
 }
 
