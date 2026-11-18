@@ -41,6 +41,7 @@ const FX = {tap: null, DUR: 320};
     origShow.call(this);
     if (reduce()) return;
     const k = take(), d = this, r = d.getBoundingClientRect();
+    if (FX.onDialog) { const h = FX.onDialog; FX.onDialog = null; try { h(d); } catch (_) {} }
     const ox = k ? k.r.left + k.r.width / 2 - r.left : r.width / 2, oy = k ? k.r.top + k.r.height / 2 - r.top : r.height / 2;
     d.style.transformOrigin = `${ox}px ${oy}px`;
     const a = d.animate([{transform: `scale(${k ? .3 : .9})`, opacity: 0}, {transform: "scale(1)", opacity: 1}],
@@ -184,10 +185,25 @@ function logoPlay(svg) {
       if (reduce()) { fin(); return; }
       o.animate([{left: r0.left + "px", top: r0.top + "px", width: r0.width + "px", height: r0.height + "px", borderRadius: "18px"},
         {left: "0px", top: "0px", width: innerWidth + "px", height: innerHeight + "px", borderRadius: "0px"}], {duration: 300, easing: EASE, fill: "forwards"}).onfinish = fin;
-    } else {                                              // حذف: کادر قرمز به دیالوگ تبدیل می‌شود
-      const r = s.rv.getBoundingClientRect(), c = typeof course === "function" ? course(id) : null;
-      FX.tap = {el: s.rv, r, t: Date.now(), danger: true};
-      Promise.resolve(c && delCourse(c)).then(() => back(s, true));
+    } else {                                              // حذف: دیالوگ از کادر درس بزرگ می‌شود، کادر قرمز به دکمهٔ حذف تبدیل می‌شود، کادر درس برمی‌گردد
+      const rr = s.rv.getBoundingClientRect(), r0 = s.sw.getBoundingClientRect(), c = typeof course === "function" ? course(id) : null;
+      FX.tap = {el: s.card, r: r0, t: Date.now(), danger: false};
+      FX.onDialog = d => {
+        s.card.style.transition = "none"; s.card.style.transform = "";           // برای اینکه همان کادرِ سر جایش به دیالوگ تبدیل شود
+        queueMicrotask(() => { s.card.style.transform = `translateX(${v}px)`; void s.card.offsetWidth; back(s, false); });
+        const btn = d.querySelector(".btn.danger"); if (!btn || reduce()) { s.rv.remove(); return; }
+        const br = btn.getBoundingClientRect(), rad = getComputedStyle(btn).borderRadius;
+        btn.style.visibility = "hidden";
+        const o = document.createElement("div"); o.setAttribute("popover", "manual");
+        o.style.cssText = `position:fixed;inset:auto;margin:0;padding:0;border:0;overflow:hidden;pointer-events:none;background:var(--danger);left:${rr.left}px;top:${rr.top}px;width:${rr.width}px;height:${rr.height}px;border-radius:18px`;
+        document.body.appendChild(o); try { o.showPopover(); } catch (_) {}
+        s.rv.remove();
+        const a = o.animate([{left: rr.left + "px", top: rr.top + "px", width: rr.width + "px", height: rr.height + "px", borderRadius: "18px"},
+          {left: br.left + "px", top: br.top + "px", width: br.width + "px", height: br.height + "px", borderRadius: rad}], {duration: FX.DUR, easing: EASE, fill: "forwards"});
+        const fin = () => { btn.style.visibility = ""; o.remove(); };
+        a.onfinish = a.oncancel = fin; setTimeout(fin, FX.DUR + 500);
+      };
+      Promise.resolve(c && delCourse(c)).then(() => { FX.onDialog = null; back(s, true); });
     }
   };
   document.addEventListener("pointerup", end, true);
