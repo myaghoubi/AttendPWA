@@ -120,7 +120,7 @@ function setBar(title, {back, sub, right = "", acc} = {}) {
   $("#mn").onclick = () => $("#drawer").classList.contains("open") ? closeMenu() : openMenu();
   $("#mn").classList.toggle("open", $("#drawer").classList.contains("open"));
 }
-function show(html) { applyCols(); page.innerHTML = html + verFoot(); page.classList.remove("page-in"); void page.offsetWidth; page.classList.add("page-in"); window.scrollTo(0, 0); document.body.scrollTop = 0; }
+function show(html) { applyCols(); page.innerHTML = html; renderFoot(); page.classList.remove("page-in"); void page.offsetWidth; page.classList.add("page-in"); window.scrollTo(0, 0); document.body.scrollTop = 0; }
 const course = id => S.courses.find(c => c.id === id);
 
 function route() {
@@ -185,6 +185,9 @@ function menuHtml() {
   const cur = h => (location.hash || "#/") === h ? " cur" : "";
   const hp = (location.hash || "#/").replace(/^#\/?/, "").split("/"), cc = hp[0] === "c" ? course(hp[1]) : null, sub = hp[2] || "";
   const tn = (h, ic, ac, t, on, lvl) => `<button class="mi tr tr${lvl}${on ? " cur" : ""}" data-h="${h}"><span class="mico" style="--ac:var(--${ac})">${icon(ic)}</span><span class="mt">${t}</span></button>`;
+  const inSet = ["settings", "vision", "moodle"].includes(hp[0]) && hp.length === 1, setOpen = !!window.SETOPEN || inSet;
+  const setGroup = `<button class="mi grp${setOpen ? " open" : ""}${inSet && !setOpen ? " cur" : ""}" data-g="set"><span class="mico" style="--ac:var(--primary)">${icon("sliders")}</span><span class="mt">تنظیمات</span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`
+    + `<div class="tree" id="gset"${setOpen ? "" : " hidden"}>${tn("#/settings", "sliders", "primary", "تنظیمات برنامه", hp[0] === "settings", 2)}${tn("#/vision", "scan", "ok", "تنظیمات شناسایی چهره", hp[0] === "vision", 2)}${tn("#/moodle", "cap", "warn", "تنظیمات مودل", hp[0] === "moodle", 2)}</div>`;
   const kids = c => tn(`#/c/${c.id}/people`, "users", "primary", "تعریف افراد", sub === "people" || sub === "face", 2)
     + tn(`#/c/${c.id}/attend`, "cam", "ok", "حضور و غیاب", sub === "attend", 2)
     + tn(`#/c/${c.id}/records`, "list", "warn", "سوابق حضور", sub === "records", 2)
@@ -194,7 +197,7 @@ function menuHtml() {
   dr.innerHTML = `<div class="scrim"></div><nav>
     <div class="nh">حضور و غیاب تصویری</div>${who}${who ? `<div class="hr"></div>` : ""}
     ${item("#/", "book", "primary", "فهرست دروس من")}${tree}<div class="hr"></div>
-    ${item("#/settings", "sliders", "primary", "تنظیمات برنامه")}${item("#/vision", "scan", "ok", "شناسایی چهره")}${item("#/moodle", "cap", "warn", "تنظیمات اتصال به مودل")}
+    ${setGroup}
     ${item("#/settings", "down", "ok", "پشتیبان‌گیری و بازیابی از فایل")}
     ${left.length ? `<div class="section">بازیابی</div>` + left.map(e => `<button class="mi" data-r="${e.id}"><span class="mico" style="--ac:var(--danger)">${icon("undo")}</span><span class="mt">برگردان ${KIND[e.kind]}<small>${esc(e.label)}</small></span>${ring(e)}</button>`).join("") : ""}
     <div class="hr"></div>${item("#/activate", "key", licensed() ? "ok" : "warn", licensed() ? "برنامه فعال است ✓" : "فعال‌سازی برنامه")}${licensed() ? item("#/reseller", "bag", "primary", "همکاری در فروش") : ""}${item("#/about", "info", "primary", "درباره ما")}<button class="mi" id="mexit"><span class="mico" style="--ac:var(--danger)">${icon("exit")}</span><span class="mt">خروج</span></button>
@@ -203,6 +206,8 @@ function menuHtml() {
   dr.querySelector("#mexit").onclick = exitApp;
   dr.querySelectorAll("[data-h]").forEach(b => b.onclick = () => { closeMenu(); go(b.dataset.h); });
   dr.querySelectorAll("[data-r]").forEach(b => b.onclick = () => trashRestore(b.dataset.r));
+  const gb = dr.querySelector("[data-g=set]");
+  if (gb) gb.onclick = () => { const g = dr.querySelector("#gset"); g.hidden = !g.hidden; window.SETOPEN = !g.hidden; gb.classList.toggle("open", !g.hidden); };
 }
 async function exitApp() {
   closeMenu(); save();
@@ -230,14 +235,15 @@ const chartsOn = () => true;                                              // ن�
 /* شمارهٔ نسخه: پایین صفحه، وسط‌چین و ریز؛ اگر نسخهٔ جدید روی سرور باشد چشمک می‌زند و دکمهٔ ریز «بروزرسانی» کنارش می‌آید */
 const chartBtn = () => "";                                                 // کلید نمودار و نسخه از نوار بالا برداشته شد
 function bindChartBtn() {}
-const verFoot = () => `<div id="vf" class="vfoot"><span class="vtxt${window.NEWV ? " blink" : ""}" dir="ltr">v${esc(APP_VERSION)}</span>${window.NEWV ? `<button class="vup" id="vup">بروزرسانی به <span dir="ltr">${esc(window.NEWV)}</span></button>` : ""}</div>`;
+const verFoot = () => `<span class="vtxt${window.NEWV ? " blink" : ""}" dir="ltr">v${esc(APP_VERSION)}</span>${window.NEWV ? `<button class="vup" id="vup">بروزرسانی به <span dir="ltr">${esc(window.NEWV)}</span></button>` : ""}`;
+function renderFoot() { const f = document.getElementById("vf"); if (f) f.innerHTML = verFoot(); }
 document.addEventListener("click", e => { if (e.target.closest("#vup")) { window.AUTOUPD = 1; go("#/about"); } });
 async function checkNewVersion() {
   try {
     const t = await (await fetch("version.js?t=" + Date.now(), {cache: "no-store"})).text();
     const v = new Function(t + ";return APP_VERSION;")();
     window.NEWV = v !== APP_VERSION ? v : null;
-    const f = document.getElementById("vf"); if (f) f.outerHTML = verFoot();
+    renderFoot();
   } catch (e) {}
 }
 if (typeof keepStorage === "function") keepStorage();

@@ -325,3 +325,11 @@ html{direction:rtl}html[dir=ltr]{direction:ltr}
 .vtxt{padding:2px 8px;border-radius:999px}
 .vtxt.blink{animation:vblink 1s ease-in-out infinite}
 .vup{border:0;border-radius:999px;background:var(--primary);color:#fff;font:inherit;font-size:11px;padding:3px 10px;cursor:pointer}
+
+/* پاورقی نسخه: چسبیده به پایین صفحه (body ستونی است و #page کش می‌آید) */
+#vf{margin-top:auto;padding:6px 0 calc(env(safe-area-inset-bottom) + 6px)}
+#page{padding-bottom:10px!important}
+/* زیرمنوی تنظیمات */
+.mi.grp{width:100%}.mi.grp .chev{margin-inline-start:auto;transition:transform .2s;opacity:.7;flex:none}
+.mi.grp.open .chev{transform:rotate(180deg)}
+.tree[hidden]{display:none}
