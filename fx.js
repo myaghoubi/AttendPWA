@@ -177,16 +177,17 @@ function logoPlay(svg) {
     if (v < 0) {                                          // ورود به درس با افکت
       const r = s.card.getBoundingClientRect(), r0 = s.sw.getBoundingClientRect();
       const col = getComputedStyle(s.card).getPropertyValue("--accent") && getComputedStyle(s.rv).backgroundColor;
+      const vis = Math.abs(v), vl = r0.right - vis;      // فقط بخشی که دیده می‌شود
       const o = document.createElement("div"); o.className = "swfx";
-      o.style.cssText = `position:fixed;z-index:2147483000;left:${r0.left}px;top:${r0.top}px;width:${r0.width}px;height:${r0.height}px;background:${col};border-radius:18px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;overflow:hidden;pointer-events:none`;
+      o.style.cssText = `position:fixed;z-index:2147483000;left:${vl}px;top:${r0.top}px;width:${vis}px;height:${r0.height}px;background:${col};border-radius:18px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;overflow:hidden;pointer-events:none`;
       o.textContent = s.card.querySelector(".t").textContent; document.body.appendChild(o);
       s.card.style.transition = "transform .18s ease"; s.card.style.transform = `translateX(${-s.w}px)`;
       const fin = () => { go("#/c/" + id); setTimeout(() => { o.animate([{opacity: 1}, {opacity: 0}], {duration: 220, fill: "forwards"}).onfinish = () => o.remove(); }, 60); };
       if (reduce()) { fin(); return; }
-      o.animate([{left: r0.left + "px", top: r0.top + "px", width: r0.width + "px", height: r0.height + "px", borderRadius: "18px"},
+      o.animate([{left: vl + "px", top: r0.top + "px", width: vis + "px", height: r0.height + "px", borderRadius: "18px"},
         {left: "0px", top: "0px", width: innerWidth + "px", height: innerHeight + "px", borderRadius: "0px"}], {duration: 300, easing: EASE, fill: "forwards"}).onfinish = fin;
     } else {                                              // حذف: دیالوگ از کادر درس بزرگ می‌شود، کادر قرمز به دکمهٔ حذف تبدیل می‌شود، کادر درس برمی‌گردد
-      const rr = s.rv.getBoundingClientRect(), r0 = s.sw.getBoundingClientRect(), c = typeof course === "function" ? course(id) : null;
+      const r0 = s.sw.getBoundingClientRect(), rr = {left: r0.left, top: r0.top, width: Math.abs(v), height: r0.height}, c = typeof course === "function" ? course(id) : null;
       FX.tap = {el: s.card, r: r0, t: Date.now(), danger: false};
       FX.onDialog = d => {
         s.card.style.transition = "none"; s.card.style.transform = "";           // برای اینکه همان کادرِ سر جایش به دیالوگ تبدیل شود
