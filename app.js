@@ -238,6 +238,7 @@ async function checkNewVersion() {
     document.querySelectorAll("#vb").forEach(b => b.classList.toggle("blink", !!window.NEWV));
   } catch (e) {}
 }
+if (typeof keepStorage === "function") keepStorage();
 checkNewVersion(); setInterval(checkNewVersion, 30 * 60 * 1000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkNewVersion(); });
 function coursesChart() {

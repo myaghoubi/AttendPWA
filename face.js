@@ -1,7 +1,17 @@
 "use strict";
 /* مرحلهٔ ۲: دوربین و تشخیص چهره (face-api، روی همین دستگاه؛ هیچ تصویری به جایی ارسال نمی‌شود) */
 /* نوار پیشرفت: مدل‌ها و کتابخانه (حدود ۱۴ مگابایت) بار اول با نوار پیشرفت دانلود و در حافظهٔ آفلاین ذخیره می‌شوند */
-const CACHE_NAME = "attendance-files";
+const CACHE_NAME = "attendance-models";      // حافظهٔ جدا برای مدل‌ها و کتابخانه‌ها؛ برنامه و service worker هرگز آن را پاک نمی‌کنند
+const OLD_CACHE = "attendance-files";       // نسخه‌های قبل مدل‌ها را اینجا می‌گذاشتند؛ بدون دانلود دوباره به حافظهٔ جدید منتقل می‌شوند
+/* درخواست ذخیرهٔ دائمی از مرورگر تا در کمبود فضا پاک نکند (تصمیم نهایی با مرورگر است) */
+async function keepStorage() { try { return !!(navigator.storage?.persist && (await navigator.storage.persisted() || await navigator.storage.persist())); } catch (e) { return false; } }
+async function migrateModels(list) {
+  if (!window.caches) return;
+  try {
+    const nw = await caches.open(CACHE_NAME), old = await caches.open(OLD_CACHE);
+    for (const f of list) { const o = await old.match(f); if (o && !(await nw.match(f))) { await nw.put(new Request(f), o.clone()); await old.delete(f); } }
+  } catch (e) {}
+}
 function prog(el) {
   return (t, f) => {
     if (!el.querySelector(".pg")) el.innerHTML = `<div class="pgt"></div><div class="pg"><i></i></div>`;
@@ -15,6 +25,7 @@ const Heavy = {
   // دانلود فایل‌ها با نوار پیشرفت و ذخیره در حافظهٔ آفلاین. force=true: حتی اگر قبلاً ذخیره شده دوباره بگیر
   async fetchAll(list, cb, force) {
     if (!window.caches) return;
+    keepStorage(); await migrateModels(list);
     const c = await caches.open(CACHE_NAME), total = list.reduce((s, f) => s + (this.size(f) || 1), 0); let done = 0;
     for (const f of list) {
       const sz = this.size(f) || 1;
@@ -32,6 +43,7 @@ const Heavy = {
   },
   async status(list) {
     if (!window.caches) return {n: 0, all: list.length};
+    await migrateModels(list);
     const c = await caches.open(CACHE_NAME); let n = 0;
     for (const f of list) if (await c.match(f)) n++;
     return {n, all: list.length};
