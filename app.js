@@ -268,7 +268,7 @@ function viewCourses() {
   if ($("#msy")) $("#msy").onclick = () => go("#/moodle/sync/courses");
   $("#add").onclick = newCourse; bindChartBtn();
   show((chartsOn() ? coursesChart() : "") + (S.courses.length ? S.courses.map(c => `
-    <div class="sw" data-id="${c.id}" style="--accent:var(--${c.acc})"><div class="card" data-id="${c.id}">
+    <div class="sw" data-id="${c.id}" data-href="#/c/${c.id}" style="--accent:var(--${c.acc})"><div class="card" data-id="${c.id}">
       <div class="stripe"></div>
       <div class="txt"><div class="t">${esc(c.name)}</div><div class="s">${fa(c.people.length)} نفر</div></div>
       <div class="act"><button class="mini" data-a="ren" aria-label="ویرایش نام">${icon("edit")}</button>
@@ -312,8 +312,8 @@ function sessionChart(c, last = 12) {
 }
 function viewCourse(c) {
   setBar(c.name, {back: "#/", acc: c.acc, right: chartBtn()}); bindChartBtn();
-  const card = (key, t, s, acc) => `<button class="card" data-go="${key}" style="--accent:var(--${acc})">
-    <div class="stripe"></div><div class="txt"><div class="t">${t}</div><div class="s">${s}</div></div></button>`;
+  const card = (key, t, s, acc) => `<div class="sw" data-href="${key === "msync" ? `#/moodle/sync/${c.id}` : `#/c/${c.id}/${key}`}" style="--accent:var(--${acc})"><button class="card" data-go="${key}">
+    <div class="stripe"></div><div class="txt"><div class="t">${t}</div><div class="s">${s}</div></div></button></div>`;
   show((chartsOn() ? sessionChart(c) : "") + card("people", "تعریف افراد", `${fa(c.people.length)} نفر`, "primary") +
        card("attend", "حضور و غیاب", "شناسایی حاضرین از روی دوربین یا عکس", "ok") +
        card("records", "سوابق حضور", `${fa((c.sessions || []).length)} جلسه`, "warn") +

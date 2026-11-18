@@ -150,8 +150,11 @@ function logoPlay(svg) {
       try { st.card.setPointerCapture(e.pointerId); } catch (_) {}
       st.card.style.transition = "none";
     }
-    const m = st.w * .5, v = Math.max(-m, Math.min(m, dx)); st.v = v;
+    const m = st.w * .5, canDel = !!st.sw.dataset.id; let v = Math.max(-m, Math.min(m, dx));
+    if (!canDel && v * sg() > 0) v = 0;                  // دکمه‌های صفحهٔ درس فقط جهت ورود را دارند
+    st.v = v;
     st.card.style.transform = `translateX(${v}px)`;
+    if (!v) { st.rv.style.display = "none"; return; }
     const del = v * sg() > 0, rv = st.rv, left = v > 0;
     if (rv.dataset.m !== (del ? "d" : "o") + (left ? "l" : "r")) {
       rv.dataset.m = (del ? "d" : "o") + (left ? "l" : "r"); const jc = left ? "flex-start" : "flex-end";
@@ -185,7 +188,7 @@ function logoPlay(svg) {
       o.style.cssText = `position:fixed;z-index:2147483000;left:${vl}px;top:${r0.top}px;width:${vis}px;height:${r0.height}px;background:${col};border-radius:18px;color:#0b1220;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;overflow:hidden;pointer-events:none`;
       o.textContent = s.card.querySelector(".t").textContent; document.body.appendChild(o);
       s.card.style.transition = "transform .18s ease"; s.card.style.transform = `translateX(${v < 0 ? -s.w : s.w}px)`;
-      const fin = () => { go("#/c/" + id); setTimeout(() => { o.animate([{opacity: 1}, {opacity: 0}], {duration: 220, fill: "forwards"}).onfinish = () => o.remove(); }, 60); };
+      const fin = () => { go(s.sw.dataset.href); setTimeout(() => { o.animate([{opacity: 1}, {opacity: 0}], {duration: 220, fill: "forwards"}).onfinish = () => o.remove(); }, 60); };
       if (reduce()) { fin(); return; }
       o.animate([{left: vl + "px", top: r0.top + "px", width: vis + "px", height: r0.height + "px", borderRadius: "18px"},
         {left: br.left + "px", top: br.top + "px", width: br.width + "px", height: br.height + "px", borderRadius: "0px"}], {duration: 320, easing: EASE, fill: "forwards"}).onfinish = fin;
