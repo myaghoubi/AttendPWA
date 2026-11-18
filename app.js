@@ -75,7 +75,7 @@ function ask({title, text, input, ok = "تأیید", danger = false}) {
   return new Promise(res => {
     dlg.innerHTML = `<h2>${esc(title)}</h2>${text ? `<div class="muted">${esc(text)}</div>` : ""}
       ${input !== undefined ? `<input type="text" id="dv" value="${esc(input)}" style="width:100%;margin-top:12px;box-shadow:none;background:var(--card2)">` : ""}
-      <div class="row"><button class="btn soft" data-r="0">انصراف</button><button class="btn ${danger ? "danger" : ""}" data-r="1">${esc(ok)}</button></div>`;
+      <div class="row"><button class="btn soft" data-r="0">انصراف</button><button class="btn ${danger ? "danger" : ""}" data-r="1">${danger && ok === "حذف" ? icon("trash") : ""}${esc(ok)}</button></div>`;
     const done = v => { dlg.close(); res(v); };
     dlg.querySelectorAll("button").forEach(b => b.onclick = () => done(b.dataset.r === "1" ? (input !== undefined ? $("#dv").value.trim() : true) : null));
     dlg.oncancel = () => res(null);

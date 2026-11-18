@@ -109,6 +109,7 @@ function logoPlay(svg) {
   const reduce = () => matchMedia("(prefers-reduced-motion:reduce)").matches;
   const EASE = "cubic-bezier(.65,0,.35,1)";
   let st = null, swipedAt = 0;
+  const sg = () => document.documentElement.dir === "ltr" ? -1 : 1;   // فارسی: چپ→راست حذف؛ انگلیسی برعکس
   const skip = t => {
     if (!t || !t.closest) return true;
     if (t.closest("input,textarea,select,dialog,#drawer,canvas,video,.tb,[data-noswipe],#bar")) return true;
@@ -151,12 +152,13 @@ function logoPlay(svg) {
     }
     const m = st.w * .5, v = Math.max(-m, Math.min(m, dx)); st.v = v;
     st.card.style.transform = `translateX(${v}px)`;
-    const del = v > 0, rv = st.rv;
-    if (rv.dataset.m !== (del ? "d" : "o")) {
-      rv.dataset.m = del ? "d" : "o";
-      if (del) { rv.style.cssText = "background:var(--danger);color:var(--on-danger);justify-content:flex-start"; rv.innerHTML = `${icon("trash")}<span>${isEn() ? "Delete" : "حذف"}</span>`; }
-      else { rv.style.cssText = "background:var(--accent,var(--primary));color:#fff;justify-content:flex-end"; rv.innerHTML = `<span class="rn"></span>`; rv.firstChild.style.setProperty("--d", document.documentElement.dir); rv.firstChild.textContent = st.card.querySelector(".t").textContent; }
+    const del = v * sg() > 0, rv = st.rv, left = v > 0;
+    if (rv.dataset.m !== (del ? "d" : "o") + (left ? "l" : "r")) {
+      rv.dataset.m = (del ? "d" : "o") + (left ? "l" : "r"); const jc = left ? "flex-start" : "flex-end";
+      if (del) { rv.style.cssText = "background:var(--danger);color:var(--on-danger);justify-content:" + jc; rv.innerHTML = `<span class="ri">${icon("trash")}<span>${isEn() ? "Delete" : "حذف"}</span></span>`; }
+      else { rv.style.cssText = "background:var(--accent,var(--primary));color:#fff;justify-content:" + jc; rv.innerHTML = `<span class="rn"></span>`; rv.firstChild.style.setProperty("--d", document.documentElement.dir); rv.firstChild.textContent = st.card.querySelector(".t").textContent; }
     }
+    rv.style.setProperty("--d", document.documentElement.dir);
     rv.style.display = "flex";
   }, true);
   const back = (s, drop) => {
@@ -174,20 +176,20 @@ function logoPlay(svg) {
     swipedAt = Date.now();
     const v = s.v || 0, th = s.w * .3, id = s.sw.dataset.id;
     if (e.type !== "pointerup" || Math.abs(v) < th) return back(s, true);
-    if (v < 0) {                                          // ورود به درس با افکت
+    if (v * sg() < 0) {                                   // ورود به درس با افکت
       const r = s.card.getBoundingClientRect(), r0 = s.sw.getBoundingClientRect();
       const col = getComputedStyle(s.card).getPropertyValue("--accent") && getComputedStyle(s.rv).backgroundColor;
-      const vis = Math.abs(v), vl = r0.right - vis;      // فقط بخشی که دیده می‌شود
+      const vis = Math.abs(v), vl = v < 0 ? r0.right - vis : r0.left;      // فقط بخشی که دیده می‌شود
       const o = document.createElement("div"); o.className = "swfx";
       o.style.cssText = `position:fixed;z-index:2147483000;left:${vl}px;top:${r0.top}px;width:${vis}px;height:${r0.height}px;background:${col};border-radius:18px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;overflow:hidden;pointer-events:none`;
       o.textContent = s.card.querySelector(".t").textContent; document.body.appendChild(o);
-      s.card.style.transition = "transform .18s ease"; s.card.style.transform = `translateX(${-s.w}px)`;
+      s.card.style.transition = "transform .18s ease"; s.card.style.transform = `translateX(${v < 0 ? -s.w : s.w}px)`;
       const fin = () => { go("#/c/" + id); setTimeout(() => { o.animate([{opacity: 1}, {opacity: 0}], {duration: 220, fill: "forwards"}).onfinish = () => o.remove(); }, 60); };
       if (reduce()) { fin(); return; }
       o.animate([{left: vl + "px", top: r0.top + "px", width: vis + "px", height: r0.height + "px", borderRadius: "18px"},
         {left: "0px", top: "0px", width: innerWidth + "px", height: innerHeight + "px", borderRadius: "0px"}], {duration: 300, easing: EASE, fill: "forwards"}).onfinish = fin;
     } else {                                              // حذف: دیالوگ از کادر درس بزرگ می‌شود، کادر قرمز به دکمهٔ حذف تبدیل می‌شود، کادر درس برمی‌گردد
-      const r0 = s.sw.getBoundingClientRect(), rr = {left: r0.left, top: r0.top, width: Math.abs(v), height: r0.height}, c = typeof course === "function" ? course(id) : null;
+      const r0 = s.sw.getBoundingClientRect(), rr = {left: v > 0 ? r0.left : r0.right - Math.abs(v), top: r0.top, width: Math.abs(v), height: r0.height}, c = typeof course === "function" ? course(id) : null;
       FX.tap = {el: s.card, r: r0, t: Date.now(), danger: false};
       FX.onDialog = d => {
         s.card.style.transition = "none"; s.card.style.transform = "";           // برای اینکه همان کادرِ سر جایش به دیالوگ تبدیل شود

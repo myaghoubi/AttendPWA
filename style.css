@@ -355,3 +355,5 @@ a:not(.btn):visited{color:var(--primary)}
 .rv .rn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%}
 #page{overflow-x:clip}
 .rv .rn{direction:var(--d,rtl)}
+.rv .ri{display:flex;align-items:center;gap:8px;direction:var(--d,rtl)}
+.btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-inline-end:6px}
