@@ -159,7 +159,7 @@ function logoPlay(svg) {
     if (rv.dataset.m !== (del ? "d" : "o") + (left ? "l" : "r")) {
       rv.dataset.m = (del ? "d" : "o") + (left ? "l" : "r"); const jc = left ? "flex-start" : "flex-end";
       if (del) { rv.style.cssText = "background:var(--danger);color:var(--on-danger);justify-content:" + jc; rv.innerHTML = `<span class="ri">${icon("trash")}<span>${isEn() ? "Delete" : "حذف"}</span></span>`; }
-      else { rv.style.cssText = "background:var(--accent,var(--primary));color:#0b1220;justify-content:" + jc; rv.innerHTML = `<span class="rn"></span>`; rv.firstChild.style.setProperty("--d", document.documentElement.dir); rv.firstChild.textContent = st.card.querySelector(".t").textContent; }
+      else { rv.style.cssText = "background:var(--accent,var(--primary));color:var(--on-accent,var(--on-primary));justify-content:" + jc; rv.innerHTML = `<span class="rn"></span>`; rv.firstChild.style.setProperty("--d", document.documentElement.dir); rv.firstChild.textContent = st.card.querySelector(".t").textContent; }
     }
     rv.style.setProperty("--d", document.documentElement.dir);
     rv.style.display = "flex";
@@ -185,7 +185,7 @@ function logoPlay(svg) {
       const br = bar.getBoundingClientRect();
       const vis = Math.abs(v), vl = v < 0 ? r0.right - vis : r0.left;      // فقط بخشی که دیده می‌شود
       const o = document.createElement("div"); o.className = "swfx";
-      o.style.cssText = `position:fixed;z-index:2147483000;left:${vl}px;top:${r0.top}px;width:${vis}px;height:${r0.height}px;background:${col};border-radius:18px;color:#0b1220;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;overflow:hidden;pointer-events:none`;
+      o.style.cssText = `position:fixed;z-index:2147483000;left:${vl}px;top:${r0.top}px;width:${vis}px;height:${r0.height}px;background:${col};border-radius:18px;color:${getComputedStyle(s.rv).color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;overflow:hidden;pointer-events:none`;
       o.textContent = s.card.querySelector(".t").textContent; document.body.appendChild(o);
       s.card.style.transition = "transform .18s ease"; s.card.style.transform = `translateX(${v < 0 ? -s.w : s.w}px)`;
       const fin = () => { go(s.sw.dataset.href); setTimeout(() => { o.animate([{opacity: 1}, {opacity: 0}], {duration: 220, fill: "forwards"}).onfinish = () => o.remove(); }, 60); };
