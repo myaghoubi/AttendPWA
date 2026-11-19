@@ -1,6 +1,18 @@
 // خودکار ساخته می‌شود (pwa_release.py). RELEASES: تاریخچهٔ کامل و فهرست فایل‌های تغییرکرده در هر نسخه، جدیدترین اول.
 var RELEASES = [
  {
+  "v": "1.20.4",
+  "date": "2026-11-19",
+  "fa": "آیکون برنامه: فقط آیکون‌های گوشه‌گرد در مانیفست (بدون maskable تمام‌صفحه)",
+  "en": "App icon: only rounded icons in the manifest (no full-bleed maskable)",
+  "files": [
+   "manifest.webmanifest",
+   "releases.js",
+   "sw.js",
+   "version.js"
+  ]
+ },
+ {
   "v": "1.20.3",
   "date": "2026-11-19",
   "fa": "آیکون تک‌رنگ «چهره‌ها» برای ناحیهٔ زیر کادر افراد",
@@ -775,5 +787,5 @@ var RELEASES = [
  }
 ];
 var APP_FILES = ["activation.js", "app.js", "face.js", "fonts/IRANSans-Bold.woff2", "fonts/IRANSans-Medium.woff2", "fonts/IRANSans-Regular.woff2", "fx.js", "guide.js", "i18n.js", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "index.html", "integrity.js", "lib/face-api.js", "lib/qrcode.js", "manifest.webmanifest", "models/face_landmark_68_model-weights_manifest.json", "models/face_landmark_68_model.bin", "models/face_recognition_model-weights_manifest.json", "models/face_recognition_model.bin", "models/ssd_mobilenetv1_model-weights_manifest.json", "models/ssd_mobilenetv1_model.bin", "models/tiny_face_detector_model-weights_manifest.json", "models/tiny_face_detector_model.bin", "moodle.js", "records.js", "releases.js", "reseller.js", "settings.js", "style.css", "sw.js", "version.js"];
-var FILE_SIZES = {"fx.js": 19318, "i18n.js": 37360, "sw.js": 2375, "app.js": 40879, "face.js": 42374, "style.css": 27669, "settings.js": 18295, "index.html": 1394, "activation.js": 14940, "integrity.js": 1183, "reseller.js": 8845, "moodle.js": 25502, "guide.js": 9530, "manifest.webmanifest": 571, "records.js": 12782, "icons/maskable-512.png": 27288, "icons/icon-192.png": 11349, "icons/apple-touch-icon.png": 8699, "icons/icon-512.png": 29936, "models/face_recognition_model.bin": 6444032, "models/face_landmark_68_model.bin": 356840, "models/tiny_face_detector_model.bin": 193321, "models/ssd_mobilenetv1_model-weights_manifest.json": 28233, "models/tiny_face_detector_model-weights_manifest.json": 3219, "models/face_recognition_model-weights_manifest.json": 19615, "models/ssd_mobilenetv1_model.bin": 5616957, "models/face_landmark_68_model-weights_manifest.json": 8485, "fonts/IRANSans-Bold.woff2": 29688, "fonts/IRANSans-Medium.woff2": 28916, "fonts/IRANSans-Regular.woff2": 31320, "lib/qrcode.js": 56694, "lib/face-api.js": 1333943};   // بایت؛ برای نوار پیشرفت دانلود
+var FILE_SIZES = {"fx.js": 19318, "i18n.js": 37360, "sw.js": 2375, "app.js": 40879, "face.js": 42374, "style.css": 27669, "settings.js": 18295, "index.html": 1394, "activation.js": 14940, "integrity.js": 1183, "reseller.js": 8845, "moodle.js": 25502, "guide.js": 9530, "manifest.webmanifest": 504, "records.js": 12782, "icons/maskable-512.png": 27288, "icons/icon-192.png": 11349, "icons/apple-touch-icon.png": 8699, "icons/icon-512.png": 29936, "models/face_recognition_model.bin": 6444032, "models/face_landmark_68_model.bin": 356840, "models/tiny_face_detector_model.bin": 193321, "models/ssd_mobilenetv1_model-weights_manifest.json": 28233, "models/tiny_face_detector_model-weights_manifest.json": 3219, "models/face_recognition_model-weights_manifest.json": 19615, "models/ssd_mobilenetv1_model.bin": 5616957, "models/face_landmark_68_model-weights_manifest.json": 8485, "fonts/IRANSans-Bold.woff2": 29688, "fonts/IRANSans-Medium.woff2": 28916, "fonts/IRANSans-Regular.woff2": 31320, "lib/qrcode.js": 56694, "lib/face-api.js": 1333943};   // بایت؛ برای نوار پیشرفت دانلود
 var HEAVY_FILES = ["lib/face-api.js", "lib/qrcode.js", "models/face_landmark_68_model-weights_manifest.json", "models/face_landmark_68_model.bin", "models/face_recognition_model-weights_manifest.json", "models/face_recognition_model.bin", "models/ssd_mobilenetv1_model-weights_manifest.json", "models/ssd_mobilenetv1_model.bin", "models/tiny_face_detector_model-weights_manifest.json", "models/tiny_face_detector_model.bin"];   // کتابخانه و مدل‌های تشخیص چهره
