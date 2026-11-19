@@ -357,3 +357,5 @@ a:not(.btn):visited{color:var(--primary)}
 .rv .rn{direction:var(--d,rtl)}
 .rv .ri{display:flex;align-items:center;gap:8px;direction:var(--d,rtl)}
 .btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-inline-end:6px}
+.fth{gap:12px;margin:12px 0;justify-content:center}.fth .th{width:76px;height:76px;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.fth .th.def{outline:3px solid var(--ok);outline-offset:1px}.fth .star{position:absolute;bottom:2px;inset-inline-start:4px;color:#fbbf24;font-size:18px;text-shadow:0 0 3px #000}

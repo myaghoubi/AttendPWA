@@ -150,7 +150,7 @@ function logoPlay(svg) {
       try { st.card.setPointerCapture(e.pointerId); } catch (_) {}
       st.card.style.transition = "none";
     }
-    const m = st.w * .5, canDel = !!st.sw.dataset.id; let v = Math.max(-m, Math.min(m, dx));
+    const m = st.w * .5, canDel = !!(st.sw.dataset.id || st.sw.dataset.pi); let v = Math.max(-m, Math.min(m, dx));
     if (!canDel && v * sg() > 0) v = 0;                  // دکمه‌های صفحهٔ درس فقط جهت ورود را دارند
     st.v = v;
     st.card.style.transform = `translateX(${v}px)`;
@@ -159,7 +159,7 @@ function logoPlay(svg) {
     if (rv.dataset.m !== (del ? "d" : "o") + (left ? "l" : "r")) {
       rv.dataset.m = (del ? "d" : "o") + (left ? "l" : "r"); const jc = left ? "flex-start" : "flex-end";
       if (del) { rv.style.cssText = "background:var(--danger);color:var(--on-danger);justify-content:" + jc; rv.innerHTML = `<span class="ri">${icon("trash")}<span>${isEn() ? "Delete" : "حذف"}</span></span>`; }
-      else { rv.style.cssText = "background:var(--accent,var(--primary));color:var(--on-accent,var(--on-primary));justify-content:" + jc; rv.innerHTML = `<span class="rn"></span>`; rv.firstChild.style.setProperty("--d", document.documentElement.dir); rv.firstChild.textContent = st.card.querySelector(".t").textContent; }
+      else { rv.style.cssText = "background:var(--accent,var(--primary));color:var(--on-accent,var(--on-primary));justify-content:" + jc; rv.innerHTML = `<span class="rn"></span>`; rv.firstChild.style.setProperty("--d", document.documentElement.dir); rv.firstChild.textContent = st.sw.dataset.lbl || st.card.querySelector(".t").textContent; }
     }
     rv.style.setProperty("--d", document.documentElement.dir);
     rv.style.display = "flex";
@@ -179,6 +179,17 @@ function logoPlay(svg) {
     swipedAt = Date.now();
     const v = s.v || 0, th = s.w * .3, id = s.sw.dataset.id;
     if (e.type !== "pointerup" || Math.abs(v) < th) return back(s, true);
+    const pi = s.sw.dataset.pi;
+    if (pi != null && v * sg() < 0) {                    // کادر فرد: دیالوگ چهره‌ها (کادر به دیالوگ تبدیل می‌شود، کادر سر جایش برمی‌گردد)
+      const r0 = s.sw.getBoundingClientRect();
+      FX.tap = {el: s.card, r: r0, t: Date.now(), danger: false};
+      FX.onDialog = () => {
+        s.card.style.transition = "none"; s.card.style.transform = "";
+        queueMicrotask(() => { s.card.style.transform = `translateX(${v}px)`; void s.card.offsetWidth; back(s, false); s.rv.remove(); });
+      };
+      Promise.resolve(SWIPE.faces && SWIPE.faces(+pi)).then(() => { FX.onDialog = null; back(s, true); });
+      return;
+    }
     if (v * sg() < 0) {                                   // ورود به درس با افکت
       const r = s.card.getBoundingClientRect(), r0 = s.sw.getBoundingClientRect();
       const col = getComputedStyle(s.card).getPropertyValue("--accent") && getComputedStyle(s.rv).backgroundColor;
@@ -194,7 +205,7 @@ function logoPlay(svg) {
         {left: br.left + "px", top: br.top + "px", width: br.width + "px", height: br.height + "px", borderRadius: "0px"}], {duration: 320, easing: EASE, fill: "forwards"}).onfinish = fin;
       o.style.fontSize = "22px"; const tx = o.firstChild; if (tx && o.animate) { const sp = document.createElement("span"); sp.textContent = o.textContent; o.textContent = ""; o.appendChild(sp); sp.animate([{opacity: 1}, {opacity: 0, offset: .6}, {opacity: 0}], {duration: 320, fill: "forwards"}); }
     } else {                                              // حذف: دیالوگ از کادر درس بزرگ می‌شود، کادر قرمز به دکمهٔ حذف تبدیل می‌شود، کادر درس برمی‌گردد
-      const r0 = s.sw.getBoundingClientRect(), rr = {left: v > 0 ? r0.left : r0.right - Math.abs(v), top: r0.top, width: Math.abs(v), height: r0.height}, c = typeof course === "function" ? course(id) : null;
+      const r0 = s.sw.getBoundingClientRect(), rr = {left: v > 0 ? r0.left : r0.right - Math.abs(v), top: r0.top, width: Math.abs(v), height: r0.height}, c = pi != null ? {pi} : (typeof course === "function" ? course(id) : null);
       FX.tap = {el: s.card, r: r0, t: Date.now(), danger: false};
       FX.onDialog = d => {
         s.card.style.transition = "none"; s.card.style.transform = "";           // برای اینکه همان کادرِ سر جایش به دیالوگ تبدیل شود
@@ -211,7 +222,7 @@ function logoPlay(svg) {
         const fin = () => { btn.style.visibility = ""; o.remove(); };
         a.onfinish = a.oncancel = fin; setTimeout(fin, FX.DUR + 500);
       };
-      Promise.resolve(c && delCourse(c)).then(() => { FX.onDialog = null; back(s, true); });
+      Promise.resolve(pi != null ? SWIPE.del(+pi) : c && delCourse(c)).then(() => { FX.onDialog = null; back(s, true); });
     }
   };
   document.addEventListener("pointerup", end, true);

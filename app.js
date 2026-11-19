@@ -401,15 +401,43 @@ function viewSoon(c, k) {
 }
 
 /* ---------- افراد ---------- */
+const SWIPE = {faces: null, del: null};
+function facesDialog(c, n, done) {          // چهره‌های ثبت‌شدهٔ یک فرد: حذف، و چهرهٔ پیش‌فرض با تاچ طولانی
+  return new Promise(res => {
+    c.faces = c.faces || {}; let undo = null;
+    const draw = () => {
+      const l = c.faces[n] || [];
+      dlg.innerHTML = `<h2>${esc(n)}</h2><div class="muted">${l.length ? "چهره‌های ثبت‌شده. برای تعیین چهرهٔ پیش‌فرض، روی یک چهره نگه دار." : "هنوز چهره‌ای ثبت نشده."}</div>
+        <div class="thumbs fth">${l.map((s, i) => `<div class="th${i === 0 ? " def" : ""}" data-i="${i}"><img src="${s.t}" alt="">${i === 0 ? `<span class="star">★</span>` : ""}<button data-x="${i}" aria-label="حذف">×</button></div>`).join("")}</div>
+        ${undo ? `<div class="row"><button class="btn soft" id="un" style="flex:1">برگردان چهرهٔ حذف‌شده</button></div>` : ""}
+        <div class="row"><button class="btn soft" id="fc" style="flex:1">بستن</button></div>`;
+      $("#fc").onclick = () => dlg.close();
+      if (undo) $("#un").onclick = () => { (c.faces[n] = c.faces[n] || []).splice(undo.i, 0, undo.x); undo = null; save(); draw(); };
+      dlg.querySelectorAll("[data-x]").forEach(b => b.onclick = e => { e.stopPropagation(); const i = +b.dataset.x, x = c.faces[n].splice(i, 1)[0]; undo = {i, x}; save(); draw(); });
+      dlg.querySelectorAll(".th").forEach(t => {
+        let tm = null, fired = false;
+        const stop = () => { clearTimeout(tm); tm = null; };
+        t.onpointerdown = e => { if (e.target.closest("[data-x]")) return; fired = false; stop();
+          tm = setTimeout(() => { fired = true; const i = +t.dataset.i; if (i > 0) { const x = c.faces[n].splice(i, 1)[0]; c.faces[n].unshift(x); undo = null; save(); navigator.vibrate?.(30); draw(); } }, 550); };
+        t.onpointerup = t.onpointerleave = t.onpointercancel = stop;
+        t.oncontextmenu = e => e.preventDefault();
+      });
+    };
+    draw();
+    dlg.oncancel = () => {};
+    dlg.addEventListener("close", () => { done && done(); res(); }, {once: true});
+    dlg.showModal();
+  });
+}
 function viewPeople(c) {
   setBar("تعریف افراد", {back: "#/c/" + c.id, sub: c.name, acc: "primary"});
   const list = () => c.people.length ? c.people.map((n, i) => `
-    <div class="card" style="min-height:64px;cursor:default;--accent:var(--primary)">
+    <div class="sw" data-pi="${i}" data-lbl="چهره‌ها" style="--accent:var(--primary);--on-accent:var(--on-primary)"><div class="card" style="min-height:64px;cursor:default;--accent:var(--primary)">
       <div class="avatar">${(c.faces?.[n] || [])[0] ? `<img src="${c.faces[n][0].t}" alt="">` : esc([...n][0] || "؟")}</div>
       <div class="txt"><div class="t">${esc(n)}</div><div class="s">${(c.faces?.[n] || []).length ? fa(c.faces[n].length) + " نمونهٔ چهره" : "بدون نمونهٔ چهره"}</div></div>
       <div class="act"><button class="mini" data-a="cam" data-i="${i}" aria-label="نمونهٔ چهره">${icon("cam")}</button>
       <button class="mini" data-a="ren" data-i="${i}">${icon("edit")}</button>
-      <button class="mini del" data-a="del" data-i="${i}">${icon("trash")}</button></div></div>`).join("")
+      <button class="mini del" data-a="del" data-i="${i}">${icon("trash")}</button></div></div></div>`).join("")
     : `<div class="empty">هنوز کسی اضافه نشده.</div>`;
   show(`<div class="row"><input type="text" id="nm" placeholder="نام و نام خانوادگی" autocomplete="off" enterkeyhint="done">
       <button class="btn" id="ad">افزودن</button></div>
@@ -452,6 +480,14 @@ function viewPeople(c) {
         deletePerson(c, n); draw();
       }
     });
+  };
+  SWIPE.faces = i => facesDialog(c, c.people[i], draw);
+  SWIPE.del = async i => {
+    const n = c.people[i]; if (n === undefined) return;
+    if (!await ask({title: "حذف فرد", text: `«${n}» با همهٔ سوابقش حذف شود؟`, ok: "حذف", danger: true})) return;
+    const sw = $("#lst").querySelector(`.sw[data-pi="${i}"]`);
+    if (sw) { sw.querySelector(".card").style.transform = ""; sw.querySelector(".rv")?.remove(); await fxRemove(sw); }
+    deletePerson(c, n); draw();
   };
   const add = () => {
     const v = $("#nm").value.trim();
