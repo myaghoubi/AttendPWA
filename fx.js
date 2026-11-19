@@ -159,7 +159,8 @@ function logoPlay(svg) {
     if (rv.dataset.m !== (del ? "d" : "o") + (left ? "l" : "r")) {
       rv.dataset.m = (del ? "d" : "o") + (left ? "l" : "r"); const jc = left ? "flex-start" : "flex-end";
       if (del) { rv.style.cssText = "background:var(--danger);color:var(--on-danger);justify-content:" + jc; rv.innerHTML = `<span class="ri">${icon("trash")}<span>${isEn() ? "Delete" : "حذف"}</span></span>`; }
-      else { rv.style.cssText = "background:var(--accent,var(--primary));color:var(--on-accent,var(--on-primary));justify-content:" + jc; rv.innerHTML = `<span class="rn"></span>`; rv.firstChild.style.setProperty("--d", document.documentElement.dir); rv.firstChild.textContent = st.sw.dataset.lbl || st.card.querySelector(".t").textContent; }
+      else { rv.style.cssText = "background:var(--accent,var(--primary));color:var(--on-accent,var(--on-primary));justify-content:" + jc; if (st.sw.dataset.pi != null) { rv.innerHTML = `<span class="ri">${icon("faces")}<span class="rn"></span></span>`; rv.querySelector(".rn").textContent = st.sw.dataset.lbl; }
+        else { rv.innerHTML = `<span class="rn"></span>`; rv.firstChild.style.setProperty("--d", document.documentElement.dir); rv.firstChild.textContent = st.sw.dataset.lbl || st.card.querySelector(".t").textContent; } }
     }
     rv.style.setProperty("--d", document.documentElement.dir);
     rv.style.display = "flex";
