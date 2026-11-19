@@ -50,10 +50,9 @@ function viewRecords(c) {
       <td class="ap" data-ap="act">${apHtml(apOf(c.act, n), "a")}</td><td class="ap" data-ap="pen">${apHtml(apOf(c.pen, n), "p")}</td></tr>`).join("")}</tbody>
     <tfoot><tr><td class="nm">حاضرین</td>${ss.map(s => `<td class="ft" data-f="${s.id}">${fa(names.filter(n => "PL".includes(s.marks[n] || "A")).length)}</td>`).join("")}<td class="tot"></td><td class="ap"></td><td class="ap"></td></tr></tfoot>
     </table></div>
-    <div class="row"><button class="btn soft" id="ra" style="flex:1">صفر کردن ستاره‌ها و سکه‌ها</button><button class="btn soft" id="rp" style="flex:1">صفر کردن تنبیه‌ها</button></div>
+    <div class="row"><button class="btn soft" id="xl" style="flex:1">${icon("down")} دریافت جدول به صورت فایل اکسل</button></div>
     <div class="muted legend"><span class="mk mP">ح</span> حاضر <span class="mk mL">ت</span> تأخیر <span class="mk mE">م</span> مجاز <span>خالی = غایب</span></div>`);
-  $("#ra").onclick = async () => { if (await ask({title: "صفر کردن", text: "ستاره‌ها و سکه‌های همهٔ دانشجوها صفر شود؟", ok: "صفر کن", danger: true})) { c.act = {}; save(); viewRecords(c); } };
-  $("#rp").onclick = async () => { if (await ask({title: "صفر کردن", text: "تنبیه‌های همهٔ دانشجوها صفر شود؟", ok: "صفر کن", danger: true})) { c.pen = {}; save(); viewRecords(c); } };
+  $("#xl").onclick = () => exportXlsx(c, names, ss);
   const tb = $("#tw");
   // تغییر وضعیت یک خانه با لمس
   tb.querySelector("tbody").onclick = e => {
@@ -166,4 +165,50 @@ function mergePeople(c, keep, dup) {
   if (c.md?.users && c.md.users[keep] == null && c.md.users[dup] != null) c.md.users[keep] = c.md.users[dup];
   if (c.md?.users) delete c.md.users[dup];
   c.people.splice(c.people.indexOf(dup), 1); save();
+}
+
+
+/* ---------- خروجی اکسل (xlsx بدون کتابخانه: zip بدون فشرده‌سازی + XML) ---------- */
+const _crcT = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const _crc = b => { let c = ~0; for (let i = 0; i < b.length; i++) c = _crcT[(c ^ b[i]) & 255] ^ (c >>> 8); return ~c >>> 0; };
+function zipStore(files) {                                   // files: [[نام, متن]]
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  const u16 = v => [v & 255, v >> 8 & 255], u32 = v => [v & 255, v >> 8 & 255, v >> 16 & 255, v >>> 24 & 255];
+  for (const [name, text] of files) {
+    const nb = enc.encode(name), d = enc.encode(text), crc = _crc(d);
+    const h = Uint8Array.from([0x50, 0x4b, 3, 4, 20, 0, 0, 8, 0, 0, 0, 0, 0x21, 0, ...u32(crc), ...u32(d.length), ...u32(d.length), ...u16(nb.length), 0, 0]);
+    parts.push(h, nb, d);
+    cen.push(Uint8Array.from([0x50, 0x4b, 1, 2, 20, 0, 20, 0, 0, 8, 0, 0, 0, 0, 0x21, 0, ...u32(crc), ...u32(d.length), ...u32(d.length), ...u16(nb.length), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...u32(off)]), nb);
+    off += h.length + nb.length + d.length;
+  }
+  const cl = cen.reduce((a, b) => a + b.length, 0);
+  return new Blob([...parts, ...cen, Uint8Array.from([0x50, 0x4b, 5, 6, 0, 0, 0, 0, ...u16(files.length), ...u16(files.length), ...u32(cl), ...u32(off), 0, 0])],
+    {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+}
+function exportXlsx(c, names, ss) {
+  const X = s => String(s).replace(/[&<>"\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[ch] || ""));
+  const col = n => { let s = ""; for (n++; n > 0; n = (n - 1) / 26 | 0) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };
+  const lc = isEn() ? "en-US" : "fa-IR", cal = S.settings?.cal === "gregorian" ? "gregory" : "persian";
+  const df = new Intl.DateTimeFormat(lc + "-u-ca-" + cal, {year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false});
+  const T = isEn() ? {n: "Name", pr: "Present", ab: "Absent", ps: "Present sessions", as: "Absent sessions", st: "Activity stars", co: "Activity coins", ps2: "Penalty strikes", pc: "Penalty crosses", f: "Present count", L: "Late", E: "Excused", A: "Absent", P: "Present"}
+    : {n: "نام", pr: "حاضر", ab: "غایب", ps: "تعداد حضور", as: "تعداد غیبت", st: "ستارهٔ فعالیت", co: "سکهٔ فعالیت", ps2: "رعدوبرق تنبیه", pc: "ضربدر تنبیه", f: "حاضرین", L: "تأخیر", E: "مجاز", A: "غ", P: "ح"};
+  const L = {P: T.P, L: T.L, E: T.E, A: T.A};
+  const cell = (r, k, v) => typeof v === "number" ? `<c r="${col(k)}${r}"><v>${v}</v></c>` : `<c r="${col(k)}${r}" t="inlineStr"><is><t>${X(v)}</t></is></c>`;
+  const rows = [[T.n, ...ss.map(s => df.format(s.t)), T.ps, T.as, T.st, T.co, T.ps2, T.pc]];
+  names.forEach(n => { const a = apOf(c.act, n), p = apOf(c.pen, n);
+    rows.push([n, ...ss.map(s => L[s.marks[n] || "A"]), ss.filter(s => "PL".includes(s.marks[n] || "A")).length, ss.filter(s => (s.marks[n] || "A") === "A").length, a.s, a.c, p.s, p.c]); });
+  rows.push([T.f, ...ss.map(s => names.filter(n => "PL".includes(s.marks[n] || "A")).length)]);
+  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView rightToLeft="${isEn() ? 0 : 1}" workbookViewId="0"><pane xSplit="1" ySplit="1" topLeftCell="B2" activePane="bottomRight" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="24" customWidth="1"/><col min="2" max="${rows[0].length}" width="15" customWidth="1"/></cols><sheetData>${rows.map((r, i) => `<row r="${i + 1}">${r.map((v, k) => cell(i + 1, k, v)).join("")}</row>`).join("")}</sheetData></worksheet>`;
+  const nm = X((c.name || "Sheet").replace(/[\\/?*\[\]:]/g, " ").slice(0, 31) || "Sheet");
+  const blob = zipStore([
+    ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`],
+    ["_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${nm}" sheetId="1" r:id="rId1"/></sheets></workbook>`],
+    ["xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`],
+    ["xl/worksheets/sheet1.xml", sheet]]);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = ((c.name || "records").replace(/[\\/:*?"<>|]/g, "_")) + "-" + new Date().toISOString().slice(0, 10) + ".xlsx";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  toast(isEn() ? "Excel file downloaded" : "فایل اکسل دریافت شد");
 }
