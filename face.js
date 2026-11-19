@@ -164,7 +164,7 @@ async function viewEnroll(c, idx) {
   const draw = () => {
     const l = c.faces[name] || [];
     $("#sh").textContent = `نمونه‌ها: ${fa(l.length)} از ${fa(MAX)}`;
-    $("#th").innerHTML = l.map((s, i) => `<div class="th"><img src="${s.t}" alt=""><button data-i="${i}" aria-label="حذف">×</button></div>`).join("");
+    $("#th").innerHTML = l.map((s, i) => `<div class="th"><img src="${s.t}" alt=""><button data-i="${i}" aria-label="حذف">${icon("x", 2.6)}</button></div>`).join("");
     $("#th").querySelectorAll("button").forEach(b => b.onclick = () => { const x = (c.faces[name] || []).splice(+b.dataset.i, 1); save(); draw(); toast("نمونه حذف شد", () => { c.faces[name].splice(+b.dataset.i, 0, x[0]); save(); draw(); }); });
     $("#shot").dataset.full = l.length >= MAX ? "1" : "";
   };
@@ -286,7 +286,7 @@ async function viewAttend(c) {
   /* پس‌زمینهٔ کادر: ۲۵٪ شفافیت از لبهٔ شروع که تا عرضِ «درصد تطبیق» به ۰ می‌رسد */
   const summary = () => {
     $("#sum").textContent = `حاضر: ${fa(found.size)} از ${fa(c.people.length)}`;
-    const CHK = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    const CHK = icon("check", 2.6);
     const rows = [...found.entries(), ...c.people.filter(n => !found.has(n)).map(n => [n, null])];     // اول حاضرها، بعد غایب‌ها
     $("#res").innerHTML = rows.map(([n, d]) => {
       const absent = d === null, pc = absent ? 0 : pctOf(d, thr),

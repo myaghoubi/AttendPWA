@@ -3,29 +3,13 @@
 const $ = s => document.querySelector(s);
 const bar = $("#bar"), page = $("#page"), dlg = $("#dlg");
 const ACCENTS = ["primary", "ok", "warn", "danger"];
-const IC = {
-  back: '<path d="M9 6l6 6-6 6"/>', plus: '<path d="M12 5v14M5 12h14"/>', trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/>',
-  sync: '<path d="M20 7v5h-5M4 17v-5h5M5.5 9A7 7 0 0 1 18 7.5L20 12M18.5 15A7 7 0 0 1 6 16.5L4 12"/>', menu: '<path d="M4 7h16M4 12h16M4 17h16"/>', edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', cam: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
-};
-Object.assign(IC, {
-  key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/>',
-  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/>',
-  exit: '<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 8l-4 4 4 4M6 12h10"/>',
-  bag: '<path d="M5 8h14l-1 12H6zM9 8a3 3 0 0 1 6 0"/>',
-  chart: '<path d="M7 20V12M12 20V5M17 20v-9M4 20h16"/>',
-  sliders: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
-  scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="2.5"/><path d="M7.5 17c.8-2.3 2.4-3.3 4.5-3.3s3.7 1 4.5 3.3"/>',
-  cap: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c3 2.5 9 2.5 12 0v-4.5M22 9v6"/>',
-  users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M16 5.2a3 3 0 0 1 0 5.6M18 14c2 .6 3.2 2.4 3.2 5"/>',
-  list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
-  book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
-  down: '<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>',
-  faces: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10.5" r="2.6"/><path d="M7.2 17.2c.7-2.2 2.6-3.4 4.8-3.4s4.1 1.2 4.8 3.4"/>',
-  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8M12 17v.5"/>',
-  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
-  undo: '<path d="M4 9h10a5 5 0 0 1 0 10H8M4 9l4-4M4 9l4 4"/>',
-});
-const icon = n => `<svg viewBox="0 0 24 24">${IC[n]}</svg>`;
+/* آیکون‌ها: کتابخانهٔ Lucide (lib/lucide.js). نام‌های داخلی برنامه به نام آیکون Lucide نگاشت می‌شوند */
+const IC_MAP = {back: "chevron-right", plus: "plus", minus: "minus", trash: "trash", sync: "refresh-cw", menu: "menu", edit: "pencil", cam: "camera", gear: "settings",
+  key: "key-round", qr: "qr-code", exit: "log-out", bag: "shopping-bag", chart: "chart-column", chev: "chevron-down", sliders: "sliders-horizontal", scan: "scan-face", cap: "graduation-cap",
+  users: "users", list: "list", book: "book-open", down: "download", faces: "face-slightly-smiling", help: "circle-question-mark", info: "info", undo: "undo-2",
+  star: "star", coins: "coins", zap: "zap", x: "x", xc: "circle-x", check: "check", okc: "circle-check"};
+const IC = {}; for (const k in IC_MAP) IC[k] = LUCIDE[IC_MAP[k]];
+const icon = (n, w = 2) => `<svg class="lucide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const fa = n => isEn() ? String(n) : String(n).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
@@ -117,7 +101,7 @@ function setBar(title, {back, sub, right = "", acc} = {}) {
   if (acc) { bar.dataset.acc = acc; bar.style.setProperty("--acc", `var(--${acc})`); bar.style.setProperty("--on-acc", `var(--on-${acc})`); }
   else { delete bar.dataset.acc; }
   bar.innerHTML = (back ? `<button class="ib" id="bk" aria-label="بازگشت">${icon("back")}</button>` : "") +
-    `<h1>${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ""}</h1>${right}<button class="ib" id="mn" aria-label="منو"><svg viewBox="0 0 24 24" class="ham" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 7h14"/><path d="M5 12h14"/><path d="M5 17h14"/></svg></button>`;
+    `<h1>${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ""}</h1>${right}<button class="ib" id="mn" aria-label="منو"><svg viewBox="0 0 24 24" class="ham" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC.menu}</svg></button>`;
   if (back) $("#bk").onclick = () => go(back);
   $("#mn").onclick = () => $("#drawer").classList.contains("open") ? closeMenu() : openMenu();
   $("#mn").classList.toggle("open", $("#drawer").classList.contains("open"));
@@ -190,7 +174,7 @@ function menuHtml() {
   const hp = (location.hash || "#/").replace(/^#\/?/, "").split("/"), cc = hp[0] === "c" ? course(hp[1]) : null, sub = hp[2] || "";
   const tn = (h, ic, ac, t, on, lvl) => `<button class="mi tr tr${lvl}${on ? " cur" : ""}" data-h="${h}"><span class="mico" style="--ac:var(--${ac})">${icon(ic)}</span><span class="mt">${t}</span></button>`;
   const inSet = ["settings", "vision", "moodle"].includes(hp[0]) && hp.length === 1, setOpen = !!window.SETOPEN || inSet;
-  const setGroup = `<button class="mi grp${setOpen ? " open" : ""}${inSet && !setOpen ? " cur" : ""}" data-g="set"><span class="mico" style="--ac:var(--primary)">${icon("sliders")}</span><span class="mt">تنظیمات</span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`
+  const setGroup = `<button class="mi grp${setOpen ? " open" : ""}${inSet && !setOpen ? " cur" : ""}" data-g="set"><span class="mico" style="--ac:var(--primary)">${icon("sliders")}</span><span class="mt">تنظیمات</span>${icon("chev", 2.4).replace('class="lucide"', 'class="chev lucide" width="18" height="18"')}</button>`
     + `<div class="tree" id="gset"${setOpen ? "" : " hidden"}>${tn("#/settings", "sliders", "primary", "تنظیمات برنامه", hp[0] === "settings", 2)}${tn("#/vision", "scan", "ok", "تنظیمات شناسایی چهره", hp[0] === "vision", 2)}${tn("#/moodle", "cap", "warn", "تنظیمات مودل", hp[0] === "moodle", 2)}</div>`;
   const kids = c => tn(`#/c/${c.id}/people`, "users", "primary", "تعریف افراد", sub === "people" || sub === "face", 2)
     + tn(`#/c/${c.id}/attend`, "cam", "ok", "حضور و غیاب", sub === "attend", 2)
@@ -410,7 +394,7 @@ function facesDialog(c, n, done) {          // چهره‌های ثبت‌شده
       const l = c.faces[n] || [];
       dlg.style.setProperty("--accent", "var(--primary)"); dlg.style.setProperty("--on-accent", "var(--on-primary)");
       dlg.innerHTML = `<h2>${esc(n)}</h2><div class="muted">${l.length ? "چهره‌های ثبت‌شده. برای تعیین چهرهٔ پیش‌فرض، روی یک چهره نگه دار." : "هنوز چهره‌ای ثبت نشده."}</div>
-        <div class="thumbs fth">${l.map((s, i) => `<div class="th${i === 0 ? " def" : ""}" data-i="${i}"><img src="${s.t}" alt="">${i === 0 ? `<span class="star">★</span>` : ""}<button data-x="${i}" aria-label="حذف">×</button></div>`).join("")}</div>
+        <div class="thumbs fth">${l.map((s, i) => `<div class="th${i === 0 ? " def" : ""}" data-i="${i}"><img src="${s.t}" alt="">${i === 0 ? `<span class="star">★</span>` : ""}<button data-x="${i}" aria-label="حذف">${icon("x", 2.6)}</button></div>`).join("")}</div>
         ${undo ? `<div class="row"><button class="btn soft" id="un" style="flex:1">برگردان چهرهٔ حذف‌شده</button></div>` : ""}
         <div class="row"><button class="btn" id="fc" style="flex:1;background:var(--accent,var(--primary));color:var(--on-accent,var(--on-primary))">بستن</button></div>`;
       $("#fc").onclick = () => dlg.close();

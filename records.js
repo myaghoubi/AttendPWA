@@ -18,7 +18,7 @@ function apAdd(a, n) {
   s++; if (s >= 5) { s -= 5; c++; } a[n] = {stars: s, coins: c}; return true;
 }
 function apRm(a, n) { let {s, c} = apOf(a, n); if (s > 0) s--; else if (c > 0) { c--; s = 4; } a[n] = {stars: s, coins: c}; }
-const apHtml = (v, k) => (v.c ? `<span class="${k}c">${k === "a" ? "🪙" : "✖"}${fa(v.c)}</span> ` : "") + (v.s ? `<span class="${k}s">${k === "a" ? "★" : "⚡"}${fa(v.s)}</span>` : "") || "·";
+const apHtml = (v, k) => (v.c ? `<span class="${k}c">${icon(k === "a" ? "coins" : "xc")}${fa(v.c)}</span> ` : "") + (v.s ? `<span class="${k}s">${icon(k === "a" ? "star" : "zap")}${fa(v.s)}</span>` : "") || "·";
 const nowLocal = t => { const d = new Date(t - new Date(t).getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); };
 
 function addSession(c, found) {                         // found: مجموعهٔ نام‌های حاضر (یا خالی برای جلسهٔ ساده)
@@ -104,7 +104,7 @@ function editSession(c, id) {
 function apPanel(c, n, done) {
   c.act = c.act || {}; c.pen = c.pen || {};
   const sec = (key, store, ic, ic2, title) => `<div class="apsec"><div class="muted">${title}</div><div class="aprow">
-    <button class="btn soft" data-m="${key}">−</button><div class="apv" id="v_${key}"></div><button class="btn ${key === "act" ? "" : "danger"}" data-p="${key}">+</button></div></div>`;
+    <button class="btn soft" data-m="${key}">${icon("minus")}</button><div class="apv" id="v_${key}"></div><button class="btn ${key === "act" ? "" : "danger"}" data-p="${key}">${icon("plus")}</button></div></div>`;
   dlg.innerHTML = `<h2>${esc(n)}</h2>${sec("act", c.act, "★", "🪙", "فعالیت (ستاره و سکه)")}${sec("pen", c.pen, "⚡", "✖", "تنبیه (رعدوبرق و ضربدر)")}
     <div class="row"><button class="btn" id="dn">بستن</button></div>`;
   const draw = () => { $("#v_act").innerHTML = apHtml(apOf(c.act, n), "a"); $("#v_pen").innerHTML = apHtml(apOf(c.pen, n), "p"); };
