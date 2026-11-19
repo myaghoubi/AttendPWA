@@ -407,10 +407,11 @@ function facesDialog(c, n, done) {          // چهره‌های ثبت‌شده
     c.faces = c.faces || {}; let undo = null;
     const draw = () => {
       const l = c.faces[n] || [];
+      dlg.style.setProperty("--accent", "var(--primary)"); dlg.style.setProperty("--on-accent", "var(--on-primary)");
       dlg.innerHTML = `<h2>${esc(n)}</h2><div class="muted">${l.length ? "چهره‌های ثبت‌شده. برای تعیین چهرهٔ پیش‌فرض، روی یک چهره نگه دار." : "هنوز چهره‌ای ثبت نشده."}</div>
         <div class="thumbs fth">${l.map((s, i) => `<div class="th${i === 0 ? " def" : ""}" data-i="${i}"><img src="${s.t}" alt="">${i === 0 ? `<span class="star">★</span>` : ""}<button data-x="${i}" aria-label="حذف">×</button></div>`).join("")}</div>
         ${undo ? `<div class="row"><button class="btn soft" id="un" style="flex:1">برگردان چهرهٔ حذف‌شده</button></div>` : ""}
-        <div class="row"><button class="btn soft" id="fc" style="flex:1">بستن</button></div>`;
+        <div class="row"><button class="btn" id="fc" style="flex:1;background:var(--accent,var(--primary));color:var(--on-accent,var(--on-primary))">بستن</button></div>`;
       $("#fc").onclick = () => dlg.close();
       if (undo) $("#un").onclick = () => { (c.faces[n] = c.faces[n] || []).splice(undo.i, 0, undo.x); undo = null; save(); draw(); };
       dlg.querySelectorAll("[data-x]").forEach(b => b.onclick = e => { e.stopPropagation(); const i = +b.dataset.x, x = c.faces[n].splice(i, 1)[0]; undo = {i, x}; save(); draw(); });

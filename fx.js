@@ -183,9 +183,21 @@ function logoPlay(svg) {
     if (pi != null && v * sg() < 0) {                    // کادر فرد: دیالوگ چهره‌ها (کادر به دیالوگ تبدیل می‌شود، کادر سر جایش برمی‌گردد)
       const r0 = s.sw.getBoundingClientRect();
       FX.tap = {el: s.card, r: r0, t: Date.now(), danger: false};
-      FX.onDialog = () => {
+      const rr = {left: v > 0 ? r0.left : r0.right - Math.abs(v), top: r0.top, width: Math.abs(v), height: r0.height}, bg = getComputedStyle(s.rv).backgroundColor;
+      FX.onDialog = d => {
         s.card.style.transition = "none"; s.card.style.transform = "";
-        queueMicrotask(() => { s.card.style.transform = `translateX(${v}px)`; void s.card.offsetWidth; back(s, false); s.rv.remove(); });
+        queueMicrotask(() => { s.card.style.transform = `translateX(${v}px)`; void s.card.offsetWidth; back(s, false); });
+        const btn = d.querySelector("#fc"); if (!btn || reduce()) { s.rv.remove(); return; }
+        const br = btn.getBoundingClientRect(), rad = getComputedStyle(btn).borderRadius;
+        btn.style.visibility = "hidden";
+        const o = document.createElement("div"); o.setAttribute("popover", "manual");
+        o.style.cssText = `position:fixed;inset:auto;margin:0;padding:0;border:0;overflow:hidden;pointer-events:none;background:${bg};left:${rr.left}px;top:${rr.top}px;width:${rr.width}px;height:${rr.height}px;border-radius:18px`;
+        document.body.appendChild(o); try { o.showPopover(); } catch (_) {}
+        s.rv.remove();
+        const a = o.animate([{left: rr.left + "px", top: rr.top + "px", width: rr.width + "px", height: rr.height + "px", borderRadius: "18px"},
+          {left: br.left + "px", top: br.top + "px", width: br.width + "px", height: br.height + "px", borderRadius: rad}], {duration: FX.DUR, easing: EASE, fill: "forwards"});
+        const fin = () => { btn.style.visibility = ""; o.remove(); };
+        a.onfinish = a.oncancel = fin; setTimeout(fin, FX.DUR + 500);
       };
       Promise.resolve(SWIPE.faces && SWIPE.faces(+pi)).then(() => { FX.onDialog = null; back(s, true); });
       return;
