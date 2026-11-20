@@ -7,7 +7,7 @@ const ACCENTS = ["primary", "ok", "warn", "danger"];
 const IC_MAP = {back: "chevron-right", plus: "plus", minus: "minus", trash: "trash", sync: "refresh-cw", menu: "menu", edit: "pencil", cam: "camera", gear: "settings",
   key: "key-round", qr: "qr-code", exit: "log-out", bag: "shopping-bag", chart: "chart-column", chev: "chevron-down", sliders: "sliders-horizontal", scan: "scan-face", cap: "graduation-cap",
   users: "users", list: "list", book: "book-open", down: "download", faces: "face-slightly-smiling", help: "circle-question-mark", info: "info", undo: "undo-2",
-  star: "star", coins: "coins", zap: "zap", x: "x", xc: "circle-x", check: "check", okc: "circle-check"};
+  star: "star", coins: "coins", zap: "zap", x: "x", xc: "circle-x", check: "check", okc: "circle-check", rf: "rotate-cw"};
 const IC = {}; for (const k in IC_MAP) IC[k] = LUCIDE[IC_MAP[k]];
 const icon = (n, w = 2) => `<svg class="lucide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -101,8 +101,9 @@ function setBar(title, {back, sub, right = "", acc} = {}) {
   if (acc) { bar.dataset.acc = acc; bar.style.setProperty("--acc", `var(--${acc})`); bar.style.setProperty("--on-acc", `var(--on-${acc})`); }
   else { delete bar.dataset.acc; }
   bar.innerHTML = (back ? `<button class="ib" id="bk" aria-label="بازگشت">${icon("back")}</button>` : "") +
-    `<h1>${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ""}</h1>${right}<button class="ib" id="mn" aria-label="منو"><svg viewBox="0 0 24 24" class="ham" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC.menu}</svg></button>`;
+    `<h1>${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ""}</h1>${right}<button class="ib" id="rf" aria-label="به‌روزرسانی کش صفحه">${icon("rf")}</button><button class="ib" id="mn" aria-label="منو"><svg viewBox="0 0 24 24" class="ham" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC.menu}</svg></button>`;
   if (back) $("#bk").onclick = () => go(back);
+  $("#rf").onclick = refreshCache;
   $("#mn").onclick = () => $("#drawer").classList.contains("open") ? closeMenu() : openMenu();
   $("#mn").classList.toggle("open", $("#drawer").classList.contains("open"));
 }
@@ -506,3 +507,29 @@ function viewPeople(c) {
   route();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 })();
+
+
+/* دکمهٔ بالای صفحه: فایل‌های برنامه (که این صفحه از آن‌ها ساخته می‌شود) دوباره از سرور گرفته و در کش جایگزین می‌شوند، سپس صفحه بارگذاری می‌شود */
+let rfBusy = false;
+async function refreshCache() {
+  if (rfBusy) return;
+  if (!navigator.onLine) return toast("اتصال اینترنت لازم است");
+  rfBusy = true; const b = $("#rf"); b?.classList.add("spin");
+  try {
+    const names = new Set(["index.html", "version.js", "releases.js", "integrity.js", "style.css", ...(typeof INTEGRITY !== "undefined" ? Object.keys(INTEGRITY.files) : []), ...(typeof APP_FILES !== "undefined" ? APP_FILES : [])]);
+    const got = [], q = "?r=" + Date.now();
+    for (const f of names) {
+      if (f === "sw.js" || f.startsWith("models/")) continue;
+      const r = await fetch(f + q, {cache: "reload"});
+      if (!r.ok) throw new Error(f + " (" + r.status + ")");
+      got.push([f, r.headers.get("content-type") || "", await r.blob()]);
+    }
+    const c = await caches.open("attendance-files");
+    for (const [f, ct, bl] of got) {                       // همه با هم نوشته می‌شوند تا نسخهٔ ناقص ایجاد نشود
+      const mk = () => new Response(bl, {headers: {"content-type": ct}});
+      await c.put(new Request(f), mk()); if (f === "index.html") await c.put(new Request("./"), mk());
+    }
+    (await navigator.serviceWorker?.getRegistration())?.update();
+    toast("به‌روز شد؛ در حال بارگذاری مجدد…"); setTimeout(() => location.reload(), 500);
+  } catch (e) { toast("به‌روزرسانی انجام نشد: " + (e.message || e)); rfBusy = false; b?.classList.remove("spin"); }
+}
