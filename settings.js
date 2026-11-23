@@ -126,7 +126,7 @@ function viewSettings() {
     v => { s.landCols = v; applyCols(); }, v => { s.landCols = v; save(); applyCols(); })));
   root.appendChild(sec("تعداد مراحل برگرداندن حذف (۰ تا ۵؛ صفر یعنی خاموش)", sliderRow(s.undoK, 0, 5, 1, null, v => { s.undoK = v; save(); trashPurge(); })));
   const nav = (t, h) => { const b = document.createElement("button"); b.className = "btn soft"; b.textContent = t; b.onclick = () => go(h); return b; };
-  root.appendChild(sec("بخش‌ها", nav("شناسایی و پردازش چهره", "#/vision"), nav("اتصال به مودل", "#/moodle"), nav("پشتیبان‌گیری و بازیابی", "#/backup")));
+  root.appendChild(sec("بخش‌ها", nav("شناسایی و پردازش چهره", "#/vision"), nav("اتصال به مودل", "#/moodle"), nav("پشتیبان‌گیری و بازیابی", "#/backup"), nav("ذخیرهٔ ابری", "#/cloud")));
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone;
   const ins = document.createElement("div"); ins.className = "setsec";
   ins.innerHTML = `<div class="section">نصب برنامه</div>` + (deferredInstall ? `<button class="btn" id="inst">نصب روی این دستگاه</button>` :

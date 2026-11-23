@@ -369,3 +369,5 @@ svg.lucide{flex:none}
 #rf.spin svg{animation:rfspin .9s linear infinite}
 @keyframes rfspin{to{transform:rotate(360deg)}}
 #bar #rf{width:34px;height:34px}
+.danger-t{color:var(--danger)}
+#cl input[type=email],#cl input[type=password]{box-sizing:border-box}

@@ -7,7 +7,7 @@ const ACCENTS = ["primary", "ok", "warn", "danger"];
 const IC_MAP = {back: "chevron-right", plus: "plus", minus: "minus", trash: "trash", sync: "refresh-cw", menu: "menu", edit: "pencil", cam: "camera", gear: "settings",
   key: "key-round", qr: "qr-code", exit: "log-out", bag: "shopping-bag", chart: "chart-column", chev: "chevron-down", sliders: "sliders-horizontal", scan: "scan-face", cap: "graduation-cap",
   users: "users", list: "list", book: "book-open", down: "download", faces: "face-slightly-smiling", help: "circle-question-mark", info: "info", undo: "undo-2",
-  star: "star", coins: "coins", zap: "zap", x: "x", xc: "circle-x", check: "check", okc: "circle-check", rf: "rotate-cw"};
+  star: "star", coins: "coins", zap: "zap", x: "x", xc: "circle-x", check: "check", okc: "circle-check", rf: "rotate-cw", cloud: "cloud"};
 const IC = {}; for (const k in IC_MAP) IC[k] = LUCIDE[IC_MAP[k]];
 const icon = (n, w = 2) => `<svg class="lucide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -43,7 +43,7 @@ const Store = {
   },
 };
 let S = {v: 1, courses: [], settings: {theme: "system"}};
-function save() { Store.set("state", S); }   // داده کوچک است: هر تغییر بلافاصله نوشته می‌شود
+function save() { Store.set("state", S); if (typeof Cloud !== "undefined") Cloud.dirty(); }   // داده کوچک است: هر تغییر بلافاصله نوشته می‌شود
 addEventListener("pagehide", save);
 addEventListener("visibilitychange", () => document.hidden && save());
 
@@ -127,6 +127,7 @@ function route() {
   if (p[0] === "vision") return viewVision();
   if (p[0] === "about") return viewAbout();
   if (p[0] === "guide") return viewGuide();
+  if (p[0] === "cloud") return viewCloud();
   if (p[0] === "backup") return viewBackup();
   if (p[0] === "moodle") return p[1] === "sync" ? viewMdSync(p[2], p[3]) : viewMoodle();
   return viewCourses();
@@ -188,6 +189,7 @@ function menuHtml() {
     ${item("#/", "book", "primary", "فهرست دروس من")}${tree}<div class="hr"></div>
     ${setGroup}
     ${item("#/backup", "down", "ok", "پشتیبان‌گیری و بازیابی")}
+    ${item("#/cloud", "cloud", Cloud.st.on ? "ok" : "primary", "ذخیرهٔ ابری")}
     ${left.length ? `<div class="section">بازیابی</div>` + left.map(e => `<button class="mi" data-r="${e.id}"><span class="mico" style="--ac:var(--danger)">${icon("undo")}</span><span class="mt">برگردان ${KIND[e.kind]}<small>${esc(e.label)}</small></span>${ring(e)}</button>`).join("") : ""}
     <div class="hr"></div>${item("#/activate", "key", licensed() ? "ok" : "warn", licensed() ? "برنامه فعال است ✓" : "فعال‌سازی برنامه")}${licensed() ? item("#/reseller", "bag", "primary", "همکاری در فروش") : ""}${item("#/guide", "help", "ok", "راهنمای استفاده")}${item("#/about", "info", "primary", "درباره ما")}<button class="mi" id="mexit"><span class="mico" style="--ac:var(--danger)">${icon("exit")}</span><span class="mt">خروج</span></button>
     </nav>`;
@@ -500,11 +502,11 @@ function viewPeople(c) {
   const d = await Store.get("state");
   if (d && Array.isArray(d.courses)) S = {v: 1, ...d};
   normSettings(); applyTheme(); applyLang();
-  await licInit();
+  await Cloud.load(); await licInit();
   integrityCheck(); setInterval(integrityCheck, 600000); addEventListener("visibilitychange", () => !document.hidden && integrityCheck());
   navigator.storage?.persist?.();                       // جلوگیری از پاک شدن خودکار داده‌ها
   addEventListener("hashchange", route);
-  route();
+  route(); Cloud.init(); setTimeout(() => (location.hash === "" || location.hash === "#/") && cloudOffer(), 1500);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 })();
 
