@@ -49,17 +49,36 @@ const Cloud = {
 
   /* ---- حساب ---- */
   async signUp(email, password) {
-    const j = await this.raw("/auth/v1/signup", {method: "POST", body: {email, password}});
+    const j = await this.raw("/auth/v1/signup?redirect_to=" + encodeURIComponent(this.back()), {method: "POST", body: {email, password}});
     if (j && j.access_token) { this.setSession(j); return {session: true}; }
     return {session: false};          // تأیید ایمیل لازم است
   },
   async signIn(email, password) { this.setSession(await this.raw("/auth/v1/token?grant_type=password", {method: "POST", body: {email, password}})); },
-  async recover(email) { await this.raw("/auth/v1/recover", {method: "POST", body: {email}}); },
+  async recover(email) { await this.raw("/auth/v1/recover?redirect_to=" + encodeURIComponent(this.back()), {method: "POST", body: {email}}); },
   async signOut() {
     try { if (this.st.session) await this.raw("/auth/v1/logout", {method: "POST", token: this.st.session.access_token}); } catch (_) {}
     this.st.session = null; this.st.on = false; this.persist();
   },
   uid() { return this.st.session?.user?.id; },
+  back() { return location.origin + location.pathname; },          // آدرس برگشت بعد از زدن لینک ایمیل (باید در Redirect URLs سوپابیس مجاز باشد)
+  /* برگشت از لینک ایمیل (تأیید ثبت‌نام یا بازنشانی گذرواژه): توکن‌ها در hash می‌آیند، مثل #access_token=…&type=signup */
+  async fromHash() {
+    const h = location.hash.replace(/^#\/?/, "");
+    if (!/(^|&)(access_token|error)=/.test(h)) return false;
+    const q = new URLSearchParams(h); history.replaceState(null, "", location.pathname + "#/cloud");
+    if (q.get("error")) { setTimeout(() => toast(/expired|invalid/i.test(q.get("error_description") || "") ? "لینک منقضی شده یا نامعتبر است؛ دوباره تلاش کن" : (q.get("error_description") || "خطا").replace(/\+/g, " ")), 800); return true; }
+    try {
+      const at = q.get("access_token"), user = await this.raw("/auth/v1/user", {token: at});
+      this.setSession({access_token: at, refresh_token: q.get("refresh_token"), expires_in: +q.get("expires_in") || 3600, user});
+      const rec = q.get("type") === "recovery";
+      setTimeout(async () => {
+        if (rec) { const pw = await ask({title: "گذرواژهٔ جدید", text: "گذرواژهٔ جدید را بنویس (حداقل ۶ نویسه).", input: "", ok: "ذخیره"}); if (pw) { try { await this.api("/auth/v1/user", {method: "PUT", body: {password: pw}}); toast("گذرواژه تغییر کرد"); } catch (e) { toast(this.errText(e)); } } }
+        else { toast("ایمیل تأیید شد"); if (!this.st.on && (await this.connect().catch(() => false))) toast("ذخیرهٔ ابری فعال شد"); }
+        if (typeof viewCloud === "function" && location.hash === "#/cloud") viewCloud();
+      }, 900);
+    } catch (e) { setTimeout(() => toast(this.errText(e)), 800); }
+    return true;
+  },
 
   /* ---- همگام‌سازی ---- */
   dirty() {                                    // بعد از هر save() فراخوانی می‌شود

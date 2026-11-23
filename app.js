@@ -506,7 +506,8 @@ function viewPeople(c) {
   integrityCheck(); setInterval(integrityCheck, 600000); addEventListener("visibilitychange", () => !document.hidden && integrityCheck());
   navigator.storage?.persist?.();                       // جلوگیری از پاک شدن خودکار داده‌ها
   addEventListener("hashchange", route);
-  route(); Cloud.init(); setTimeout(() => (location.hash === "" || location.hash === "#/") && cloudOffer(), 1500);
+  const fromMail = await Cloud.fromHash();
+  route(); Cloud.init(); setTimeout(() => !fromMail && (location.hash === "" || location.hash === "#/") && cloudOffer(), 1500);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 })();
 
