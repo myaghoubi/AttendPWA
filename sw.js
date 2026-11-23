@@ -1,6 +1,6 @@
 // Service worker: برنامه یک‌بار دانلود می‌شود و بعد آفلاین کار می‌کند.
 // بروزرسانی فایل‌ها از داخل برنامه («درباره ما ← بروزرسانی برنامه») و بر اساس version.js انجام می‌شود.
-const VERSION = "1.24.0";   // با هر نسخه عوض می‌شود تا مرورگر service worker تازه را بگیرد
+const VERSION = "1.24.1";   // با هر نسخه عوض می‌شود تا مرورگر service worker تازه را بگیرد
 const CACHE = "attendance-files";
 const MODELS = "attendance-models";     // مدل‌ها و کتابخانهٔ تشخیص چهره: بعد از دانلود هرگز پاک نمی‌شود
 const FILES = ["./", "index.html", "version.js", "releases.js", "lib/qrcode.js","lib/lucide.js", "i18n.js", "fx.js", "integrity.js", "activation.js", "reseller.js", "style.css", "app.js", "face.js", "settings.js", "moodle.js", "guide.js","cloud.js", "records.js", "fonts/IRANSans-Regular.woff2", "fonts/IRANSans-Medium.woff2", "fonts/IRANSans-Bold.woff2", "manifest.webmanifest",
